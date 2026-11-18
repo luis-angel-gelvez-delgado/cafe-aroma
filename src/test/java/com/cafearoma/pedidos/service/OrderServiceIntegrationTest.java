@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -87,71 +88,115 @@ class OrderServiceIntegrationTest {
     }
 
     @Test
-    void recorreElFlujoCompletoHastaEntregado() {
+    void recorreElFlujoCompletoCajaCocinaCaja() {
         Long id = createSimpleOrder();
-        orderService.changeStatus(id, OrderStatus.EN_PREPARACION);
-        orderService.changeStatus(id, OrderStatus.LISTO_PARA_RECOGER);
-        orderService.updatePayment(id, PaymentStatus.PAGADO);
-        OrderResponse delivered = orderService.changeStatus(id, OrderStatus.ENTREGADO);
-        assertEquals(OrderStatus.ENTREGADO, delivered.getStatus());
+        orderService.registerPayment(id);                         // caja cobra
+        assertEquals(OrderStatus.EN_PREPARACION, orderService.take(id).getStatus());       // cocina toma
+        assertEquals(OrderStatus.LISTO_PARA_RECOGER, orderService.markReady(id).getStatus()); // cocina: listo
+        assertEquals(OrderStatus.ENTREGADO, orderService.deliver(id).getStatus());          // caja entrega
+    }
+
+    @Test
+    void cocinaNoPuedeTomarUnPedidoSinPagar() {
+        Long id = createSimpleOrder();
+        assertThrows(BusinessRuleException.class, () -> orderService.take(id));
+        assertEquals(OrderStatus.RECIBIDO, orderService.getOrder(id).getStatus());
     }
 
     @Test
     void rechazaSaltarseEstados() {
         Long id = createSimpleOrder();
-        assertThrows(InvalidStatusTransitionException.class,
-                () -> orderService.changeStatus(id, OrderStatus.ENTREGADO));
+        orderService.registerPayment(id);
+        assertThrows(InvalidStatusTransitionException.class, () -> orderService.markReady(id));
+        assertThrows(InvalidStatusTransitionException.class, () -> orderService.deliver(id));
     }
 
     @Test
-    void permiteCancelarEnRecibido() {
+    void rechazaDevolverEstados() {
         Long id = createSimpleOrder();
-        assertEquals(OrderStatus.CANCELADO, orderService.changeStatus(id, OrderStatus.CANCELADO).getStatus());
+        orderService.registerPayment(id);
+        orderService.take(id);
+        assertThrows(InvalidStatusTransitionException.class, () -> orderService.take(id));
+    }
+
+    @Test
+    void permiteCancelarEnRecibidoSinPagar() {
+        Long id = createSimpleOrder();
+        assertEquals(OrderStatus.CANCELADO, orderService.cancel(id).getStatus());
+    }
+
+    @Test
+    void rechazaCancelarUnPedidoPagado() {
+        Long id = createSimpleOrder();
+        orderService.registerPayment(id);
+        assertThrows(BusinessRuleException.class, () -> orderService.cancel(id));
+        assertEquals(OrderStatus.RECIBIDO, orderService.getOrder(id).getStatus());
     }
 
     @Test
     void rechazaCancelarEnPreparacion() {
         Long id = createSimpleOrder();
-        orderService.changeStatus(id, OrderStatus.EN_PREPARACION);
-        assertThrows(InvalidStatusTransitionException.class,
-                () -> orderService.changeStatus(id, OrderStatus.CANCELADO));
-    }
-
-    @Test
-    void rechazaEntregarConPagoPendiente() {
-        Long id = createSimpleOrder();
-        orderService.changeStatus(id, OrderStatus.EN_PREPARACION);
-        orderService.changeStatus(id, OrderStatus.LISTO_PARA_RECOGER);
-        assertThrows(BusinessRuleException.class,
-                () -> orderService.changeStatus(id, OrderStatus.ENTREGADO));
-    }
-
-    @Test
-    void rechazaCancelarCuandoEstaListoParaRecoger() {
-        Long id = createSimpleOrder();
-        orderService.changeStatus(id, OrderStatus.EN_PREPARACION);
-        orderService.changeStatus(id, OrderStatus.LISTO_PARA_RECOGER);
-        assertThrows(InvalidStatusTransitionException.class,
-                () -> orderService.changeStatus(id, OrderStatus.CANCELADO));
+        orderService.registerPayment(id);
+        orderService.take(id);
+        assertThrows(InvalidStatusTransitionException.class, () -> orderService.cancel(id));
     }
 
     @Test
     void registraElPago() {
         Long id = createSimpleOrder();
-        assertTrue(orderService.updatePayment(id, PaymentStatus.PAGADO).isPaid());
+        assertTrue(orderService.registerPayment(id).isPaid());
+    }
+
+    @Test
+    void elPagoNoVuelveAPendiente() {
+        Long id = createSimpleOrder();
+        orderService.registerPayment(id);
+        assertThrows(BusinessRuleException.class, () -> orderService.updatePayment(id, PaymentStatus.PENDIENTE));
+        assertThrows(BusinessRuleException.class, () -> orderService.registerPayment(id));
+        assertTrue(orderService.getOrder(id).isPaid());
     }
 
     @Test
     void noRegistraPagoDePedidoCancelado() {
         Long id = createSimpleOrder();
-        orderService.changeStatus(id, OrderStatus.CANCELADO);
-        assertThrows(BusinessRuleException.class, () -> orderService.updatePayment(id, PaymentStatus.PAGADO));
+        orderService.cancel(id);
+        assertThrows(BusinessRuleException.class, () -> orderService.registerPayment(id));
+    }
+
+    @Test
+    void cocinaSoloVePedidosPagados() {
+        Long sinPagar = createSimpleOrder();
+        Long pagado = createSimpleOrder();
+        Long enPreparacion = createSimpleOrder();
+        orderService.registerPayment(pagado);
+        orderService.registerPayment(enPreparacion);
+        orderService.take(enPreparacion);
+
+        List<OrderResponse> kitchen = orderService.findKitchenOrders();
+        assertTrue(kitchen.stream().noneMatch(o -> o.getId().equals(sinPagar)));
+        assertTrue(kitchen.stream().anyMatch(o -> o.getId().equals(pagado)));
+        assertTrue(kitchen.stream().anyMatch(o -> o.getId().equals(enPreparacion)));
+    }
+
+    @Test
+    void lasBanderasDeAccionesSiguenLasReglas() {
+        Long id = createSimpleOrder();
+        OrderResponse nuevo = orderService.getOrder(id);
+        assertTrue(nuevo.isCanPay());
+        assertTrue(nuevo.isCancellable());
+        assertFalse(nuevo.isCanTake());
+
+        OrderResponse pagado = orderService.registerPayment(id);
+        assertFalse(pagado.isCanPay());
+        assertFalse(pagado.isCancellable());
+        assertTrue(pagado.isCanTake());
     }
 
     @Test
     void consultaPedidosPorEstado() {
         Long id = createSimpleOrder();
-        orderService.changeStatus(id, OrderStatus.EN_PREPARACION);
+        orderService.registerPayment(id);
+        orderService.take(id);
         List<OrderResponse> inPreparation = orderService.findOrders(OrderStatus.EN_PREPARACION);
         assertTrue(inPreparation.stream().anyMatch(o -> o.getId().equals(id)));
         assertTrue(orderService.findOrders(OrderStatus.RECIBIDO).stream().noneMatch(o -> o.getId().equals(id)));

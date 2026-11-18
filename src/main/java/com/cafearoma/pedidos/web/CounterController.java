@@ -3,7 +3,6 @@ package com.cafearoma.pedidos.web;
 import com.cafearoma.pedidos.dto.OrderResponse;
 import com.cafearoma.pedidos.dto.ProductResponse;
 import com.cafearoma.pedidos.model.OrderStatus;
-import com.cafearoma.pedidos.model.PaymentStatus;
 import com.cafearoma.pedidos.service.BusinessRuleException;
 import com.cafearoma.pedidos.service.CatalogService;
 import com.cafearoma.pedidos.service.NotFoundException;
@@ -20,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /** Pantalla del mostrador (Thymeleaf). Usa los mismos servicios que la API REST. */
@@ -60,28 +60,37 @@ public class CounterController {
         return "counter";
     }
 
-    @PostMapping("/orders/{id}/status")
-    public String changeStatus(@PathVariable("id") Long id,
-                               @RequestParam("status") OrderStatus status,
-                               RedirectAttributes redirect) {
-        try {
-            OrderResponse order = orderService.changeStatus(id, status);
-            redirect.addFlashAttribute("success",
-                    "Pedido " + order.getOrderNumber() + " ahora está en «" + order.getStatusLabel() + "».");
-        } catch (BusinessRuleException | NotFoundException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/";
+    // Botones de la pantalla. Cada uno llama a la misma regla del servicio que usa la API.
+
+    @PostMapping("/orders/{id}/pay")
+    public String pay(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        return run(redirect, () -> orderService.registerPayment(id), "quedó pagado");
     }
 
-    @PostMapping("/orders/{id}/payment")
-    public String updatePayment(@PathVariable("id") Long id,
-                                @RequestParam("paymentStatus") PaymentStatus paymentStatus,
-                                RedirectAttributes redirect) {
+    @PostMapping("/orders/{id}/cancel")
+    public String cancel(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        return run(redirect, () -> orderService.cancel(id), "fue cancelado");
+    }
+
+    @PostMapping("/orders/{id}/take")
+    public String take(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        return run(redirect, () -> orderService.take(id), "pasó a «En preparación»");
+    }
+
+    @PostMapping("/orders/{id}/ready")
+    public String ready(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        return run(redirect, () -> orderService.markReady(id), "está «Listo para recoger»");
+    }
+
+    @PostMapping("/orders/{id}/deliver")
+    public String deliver(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        return run(redirect, () -> orderService.deliver(id), "fue entregado");
+    }
+
+    private String run(RedirectAttributes redirect, Supplier<OrderResponse> action, String result) {
         try {
-            OrderResponse order = orderService.updatePayment(id, paymentStatus);
-            redirect.addFlashAttribute("success",
-                    "Pago del pedido " + order.getOrderNumber() + ": " + order.getPaymentStatusLabel() + ".");
+            OrderResponse order = action.get();
+            redirect.addFlashAttribute("success", "Pedido " + order.getOrderNumber() + " " + result + ".");
         } catch (BusinessRuleException | NotFoundException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }

@@ -59,14 +59,24 @@ erDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> Recibido
-    Recibido --> EnPreparacion
-    EnPreparacion --> ListoParaRecoger
-    ListoParaRecoger --> Entregado
-    Recibido --> Cancelado
+    Recibido --> Recibido : Caja cobra (Pendiente → Pagado)
+    Recibido --> EnPreparacion : Cocina toma (solo si está pagado)
+    EnPreparacion --> ListoParaRecoger : Cocina marca listo
+    ListoParaRecoger --> Entregado : Caja entrega
+    Recibido --> Cancelado : Caja cancela (solo sin pagar)
     Entregado --> [*]
     Cancelado --> [*]
 ```
-Implementado en `OrderStatus.canTransitionTo` y aplicado en `OrderService.changeStatus`. Además, `changeStatus` exige que el pedido esté pagado para pasar a Entregado.
+Las transiciones por estado están en `OrderStatus.canTransitionTo`. Las condiciones que dependen del pago están en `CustomerOrder` (`canBePaid`, `canBeCancelled`, `canBeTaken`, `canBeMarkedReady`, `canBeDelivered`). `OrderService` tiene un método por acción (`registerPayment`, `cancel`, `take`, `markReady`, `deliver`) que valida la regla y responde 409 si el estado no permite el paso, o 400 si falta o sobra el pago. El pago nunca vuelve a Pendiente.
+
+| Acción | Quién | Estado | Pago |
+|---|---|---|---|
+| Crear | Caja | → Recibido | Pendiente |
+| Cobrar | Caja | Cualquiera menos Cancelado o Entregado | Pendiente → Pagado |
+| Cancelar | Caja | Recibido → Cancelado | Debe estar Pendiente |
+| Tomar | Cocina | Recibido → En preparación | Debe estar Pagado |
+| Listo | Cocina | En preparación → Listo para recoger | — |
+| Entregar | Caja | Listo para recoger → Entregado | Debe estar Pagado |
 
 ## Endpoints
 
@@ -76,10 +86,16 @@ Implementado en `OrderStatus.canTransitionTo` y aplicado en `OrderService.change
 | POST | `/api/orders` | Crear pedido `{customerName, items:[{productId, size, modifiers}]}` | 201 · 400 |
 | GET | `/api/orders?status=X` | Listar (filtro opcional por estado) | 200 · 400 (estado inválido) |
 | GET | `/api/orders/{id}` | Detalle | 200 · 404 |
-| PATCH | `/api/orders/{id}/status` | Cambiar estado `{status}` | 200 · 400 · 404 · 409 (transición no permitida) |
-| PATCH | `/api/orders/{id}/payment` | Registrar pago `{paymentStatus}` | 200 · 400 · 404 |
+| GET | `/api/orders/kitchen` | Pedidos de cocina: Recibidos pagados y En preparación | 200 |
+| PATCH | `/api/orders/{id}/payment` | Caja cobra `{"paymentStatus":"PAGADO"}` | 200 · 400 · 404 |
+| PATCH | `/api/orders/{id}/cancel` | Caja cancela | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/take` | Cocina toma (→ En preparación) | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/ready` | Cocina marca listo (→ Listo para recoger) | 200 · 404 · 409 |
+| PATCH | `/api/orders/{id}/deliver` | Caja entrega (→ Entregado) | 200 · 400 · 404 · 409 |
 
-Errores: `{"status": 409, "message": "No se puede pasar un pedido de «Listo para recoger» a «Cancelado». ..."}`
+Hay un endpoint por acción (en vez de un `PATCH /status` genérico) para que cada regla y, más adelante, cada rol, quede en una ruta clara.
+
+Errores: `{"status": 409, "message": "No se puede pasar un pedido de «En preparación» a «Cancelado». ..."}`
 
 ## Decisiones técnicas
 | Decisión | Motivo |

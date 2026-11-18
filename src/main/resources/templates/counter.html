@@ -106,23 +106,22 @@
                         <span class="badge" th:classappend="${o.paid} ? 'paid' : 'pending'"
                               th:text="${o.paymentStatusLabel}">Pendiente</span>
                     </p>
+                    <!-- Solo se pintan los botones que el servidor permite (banderas de OrderResponse) -->
                     <div class="actions">
-                        <form th:if="${o.nextStatus != null}" method="post"
-                              th:action="@{/orders/{id}/status(id=${o.id})}">
-                            <input type="hidden" name="status" th:value="${o.nextStatus}">
-                            <button type="submit" class="btn primary" th:text="${'→ ' + o.nextStatusLabel}"
-                                    th:disabled="${o.nextStatus.name() == 'ENTREGADO' and !o.paid}"
-                                    th:title="${o.nextStatus.name() == 'ENTREGADO' and !o.paid} ? 'Primero marca el pedido como pagado' : ''">Avanzar</button>
+                        <form th:if="${o.canPay}" method="post" th:action="@{/orders/{id}/pay(id=${o.id})}">
+                            <button type="submit" class="btn primary">Cobrar</button>
                         </form>
-                        <form th:if="${o.cancellable}" method="post"
-                              th:action="@{/orders/{id}/status(id=${o.id})}">
-                            <input type="hidden" name="status" value="CANCELADO">
+                        <form th:if="${o.cancellable}" method="post" th:action="@{/orders/{id}/cancel(id=${o.id})}">
                             <button type="submit" class="btn danger">Cancelar</button>
                         </form>
-                        <form method="post" th:action="@{/orders/{id}/payment(id=${o.id})}">
-                            <input type="hidden" name="paymentStatus" th:value="${o.paid} ? 'PENDIENTE' : 'PAGADO'">
-                            <button type="submit" class="btn secondary"
-                                    th:text="${o.paid} ? 'Marcar pendiente' : 'Marcar pagado'">Marcar pagado</button>
+                        <form th:if="${o.canTake}" method="post" th:action="@{/orders/{id}/take(id=${o.id})}">
+                            <button type="submit" class="btn secondary">Cocina: Tomar</button>
+                        </form>
+                        <form th:if="${o.canMarkReady}" method="post" th:action="@{/orders/{id}/ready(id=${o.id})}">
+                            <button type="submit" class="btn secondary">Cocina: Listo</button>
+                        </form>
+                        <form th:if="${o.canDeliver}" method="post" th:action="@{/orders/{id}/deliver(id=${o.id})}">
+                            <button type="submit" class="btn primary">Entregar</button>
                         </form>
                     </div>
                 </article>

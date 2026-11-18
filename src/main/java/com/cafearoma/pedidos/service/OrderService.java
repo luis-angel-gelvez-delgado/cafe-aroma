@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -151,36 +152,99 @@ public class OrderService {
         return OrderResponse.from(findOrderEntity(id));
     }
 
-    /** Las transiciones se validan aquí, en el backend, no solo en la pantalla (regla del reto). */
-    public OrderResponse changeStatus(Long id, OrderStatus newStatus) {
-        if (newStatus == null) {
-            throw new BusinessRuleException("Debes indicar el nuevo estado del pedido.");
-        }
-        CustomerOrder order = findOrderEntity(id);
-        if (!order.getStatus().canTransitionTo(newStatus)) {
-            throw new InvalidStatusTransitionException(order.getStatus(), newStatus);
-        }
-        if (newStatus == OrderStatus.ENTREGADO && order.getPaymentStatus() != PaymentStatus.PAGADO) {
-            throw new BusinessRuleException("El pedido " + String.format("#%04d", order.getId())
-                    + " tiene el pago pendiente: márcalo como pagado antes de entregarlo.");
-        }
-        order.setStatus(newStatus);
-        return OrderResponse.from(order);
+    /**
+     * Pedidos que ve cocina: los Recibidos que ya están pagados (por preparar)
+     * y los que están En preparación. Un pedido sin pagar nunca le aparece a cocina.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponse> findKitchenOrders() {
+        return orderRepository.findByStatusInOrderByIdAsc(
+                        Arrays.asList(OrderStatus.RECIBIDO, OrderStatus.EN_PREPARACION)).stream()
+                .filter(o -> o.getStatus() == OrderStatus.EN_PREPARACION || o.isPaid())
+                .map(OrderResponse::from)
+                .collect(Collectors.toList());
     }
 
-    public OrderResponse updatePayment(Long id, PaymentStatus paymentStatus) {
-        if (paymentStatus == null) {
-            throw new BusinessRuleException("Debes indicar el estado del pago (PENDIENTE o PAGADO).");
-        }
+    // Las reglas se validan aquí, en el backend, no solo escondiendo botones en la pantalla.
+    // 409: el estado no permite el paso · 400: falta o sobra el pago.
+
+    /** Caja: registra el pago. Pendiente → Pagado, sin vuelta atrás. */
+    public OrderResponse registerPayment(Long id) {
         CustomerOrder order = findOrderEntity(id);
         if (order.getStatus() == OrderStatus.CANCELADO) {
             throw new BusinessRuleException("No se puede registrar el pago de un pedido cancelado.");
         }
-        if (order.getStatus() == OrderStatus.ENTREGADO && paymentStatus == PaymentStatus.PENDIENTE) {
-            throw new BusinessRuleException("Un pedido entregado ya está pagado: no se puede volver a pendiente.");
+        if (order.isPaid()) {
+            throw new BusinessRuleException("El pedido " + number(order) + " ya está pagado.");
         }
-        order.setPaymentStatus(paymentStatus);
+        order.setPaymentStatus(PaymentStatus.PAGADO);
         return OrderResponse.from(order);
+    }
+
+    /** API {@code PATCH /payment}: solo acepta PAGADO, porque un pago no se puede revertir. */
+    public OrderResponse updatePayment(Long id, PaymentStatus paymentStatus) {
+        if (paymentStatus == null) {
+            throw new BusinessRuleException("Debes indicar el estado del pago: PAGADO.");
+        }
+        if (paymentStatus != PaymentStatus.PAGADO) {
+            throw new BusinessRuleException("Un pago registrado no se puede devolver a Pendiente.");
+        }
+        return registerPayment(id);
+    }
+
+    /** Caja: cancela. Solo en Recibido y sin pagar. */
+    public OrderResponse cancel(Long id) {
+        CustomerOrder order = findOrderEntity(id);
+        if (!order.getStatus().isCancellable()) {
+            throw new InvalidStatusTransitionException(order.getStatus(), OrderStatus.CANCELADO);
+        }
+        if (order.isPaid()) {
+            throw new BusinessRuleException("El pedido " + number(order) + " ya está pagado: no se puede cancelar.");
+        }
+        order.setStatus(OrderStatus.CANCELADO);
+        return OrderResponse.from(order);
+    }
+
+    /** Cocina: toma el pedido. Recibido → En preparación, solo si está pagado. */
+    public OrderResponse take(Long id) {
+        CustomerOrder order = findOrderEntity(id);
+        requireTransition(order, OrderStatus.EN_PREPARACION);
+        if (!order.isPaid()) {
+            throw new BusinessRuleException("El pedido " + number(order)
+                    + " tiene el pago pendiente: caja debe cobrarlo antes de que cocina lo prepare.");
+        }
+        order.setStatus(OrderStatus.EN_PREPARACION);
+        return OrderResponse.from(order);
+    }
+
+    /** Cocina: En preparación → Listo para recoger. */
+    public OrderResponse markReady(Long id) {
+        CustomerOrder order = findOrderEntity(id);
+        requireTransition(order, OrderStatus.LISTO_PARA_RECOGER);
+        order.setStatus(OrderStatus.LISTO_PARA_RECOGER);
+        return OrderResponse.from(order);
+    }
+
+    /** Caja: Listo para recoger → Entregado. Siempre debe estar pagado. */
+    public OrderResponse deliver(Long id) {
+        CustomerOrder order = findOrderEntity(id);
+        requireTransition(order, OrderStatus.ENTREGADO);
+        if (!order.isPaid()) {
+            throw new BusinessRuleException("El pedido " + number(order)
+                    + " tiene el pago pendiente: cóbralo antes de entregarlo.");
+        }
+        order.setStatus(OrderStatus.ENTREGADO);
+        return OrderResponse.from(order);
+    }
+
+    private static void requireTransition(CustomerOrder order, OrderStatus next) {
+        if (!order.getStatus().canTransitionTo(next)) {
+            throw new InvalidStatusTransitionException(order.getStatus(), next);
+        }
+    }
+
+    private static String number(CustomerOrder order) {
+        return String.format("#%04d", order.getId());
     }
 
     private CustomerOrder findOrderEntity(Long id) {

@@ -81,7 +81,7 @@ public class CustomerOrder {
         return status;
     }
 
-    /** No valida: usar siempre OrderService.changeStatus, que verifica la transición. */
+    /** No valida: usar siempre los métodos de OrderService (take, markReady, deliver, cancel), que verifican el paso. */
     public void setStatus(OrderStatus status) {
         this.status = status;
     }
@@ -92,6 +92,38 @@ public class CustomerOrder {
 
     public void setPaymentStatus(PaymentStatus paymentStatus) {
         this.paymentStatus = paymentStatus;
+    }
+
+    public boolean isPaid() {
+        return paymentStatus == PaymentStatus.PAGADO;
+    }
+
+    // Reglas del flujo caja/cocina. OrderService las aplica y OrderResponse las expone
+    // para que la pantalla solo muestre los botones permitidos.
+
+    /** Caja cobra: solo si está pendiente y el pedido no terminó. Un pago nunca vuelve a Pendiente. */
+    public boolean canBePaid() {
+        return !isPaid() && status != OrderStatus.CANCELADO && status != OrderStatus.ENTREGADO;
+    }
+
+    /** Caja cancela: solo en Recibido y sin pagar. */
+    public boolean canBeCancelled() {
+        return status.isCancellable() && !isPaid();
+    }
+
+    /** Cocina toma el pedido: Recibido → En preparación, solo si ya está pagado. */
+    public boolean canBeTaken() {
+        return status.canTransitionTo(OrderStatus.EN_PREPARACION) && isPaid();
+    }
+
+    /** Cocina lo marca listo: En preparación → Listo para recoger. */
+    public boolean canBeMarkedReady() {
+        return status.canTransitionTo(OrderStatus.LISTO_PARA_RECOGER);
+    }
+
+    /** Caja entrega: Listo para recoger → Entregado, siempre pagado. */
+    public boolean canBeDelivered() {
+        return status.canTransitionTo(OrderStatus.ENTREGADO) && isPaid();
     }
 
     public BigDecimal getTotal() {

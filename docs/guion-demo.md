@@ -12,10 +12,12 @@
 1. **Menú:** cada producto solo muestra sus opciones válidas (el croissant no tiene tamaños; el frappé no tiene Pequeño).
 2. **Crear pedido:** "Ana": Latte Grande + shot + deslactosada, y Croissant para llevar → total **$18.000**, calculado por el servidor.
 3. **Validación en el backend:** registrar un pedido sin productos → mensaje de error. Marcar a la vez "Para llevar" y "Consumir en el local" → error.
-4. **Estados:** avanzar Recibido → En preparación. Desde ahí ya no aparece el botón Cancelar. Avanzar a Listo para recoger: el botón Entregado está bloqueado mientras el pago esté pendiente.
-5. **La regla no depende de la pantalla:** con PowerShell intentar cancelar ese pedido por API → **409** con mensaje.
-   `curl.exe -i -X PATCH http://localhost:8080/api/orders/1/status -H "Content-Type: application/json" -d "@docs/api-ejemplos/estado-cancelado.json"`
-6. **Pago:** marcar pagado; se habilita Entregado y el pedido pasa al historial. Por API, entregar sin pagar → **400**.
+4. **Cocina no toma pedidos sin pagar:** el pedido nuevo está en Recibido con pago Pendiente y no tiene botón para cocina. Por API, intentar tomarlo → **400**.
+   `curl.exe -i -X PATCH http://localhost:8080/api/orders/1/take`
+5. **Caja cobra:** al cobrar desaparece Cancelar (un pedido pagado no se cancela) y aparece el botón de cocina **Tomar**.
+6. **Cocina:** Tomar → En preparación; Listo → Listo para recoger. Por API, intentar cancelar ese pedido → **409** con mensaje.
+   `curl.exe -i -X PATCH http://localhost:8080/api/orders/1/cancel`
+7. **Caja entrega:** el pedido pasa a Entregado y aparece en el historial.
 
 ## 3. SQL (1–2 min)
 - Mostrar el diagrama ER de `design.md` y por qué `order_item.price` congela el precio cobrado.

@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 
 /**
  * Pedido tal como lo ven la API y la pantalla.
- * nextStatus y cancellable salen de OrderStatus, así la interfaz no repite las reglas.
+ * nextStatus y las banderas de acciones (canPay, cancellable, canTake, canMarkReady, canDeliver)
+ * salen del modelo, así la interfaz no repite las reglas: solo muestra los botones permitidos.
  */
 public final class OrderResponse {
 
@@ -30,11 +31,16 @@ public final class OrderResponse {
     private final OrderStatus nextStatus;
     private final String nextStatusLabel;
     private final boolean cancellable;
+    private final boolean canPay;
+    private final boolean canTake;
+    private final boolean canMarkReady;
+    private final boolean canDeliver;
 
     public OrderResponse(Long id, String orderNumber, String customerName, OrderStatus status, String statusLabel,
                          PaymentStatus paymentStatus, String paymentStatusLabel, boolean paid, BigDecimal total,
                          LocalDateTime createdAt, List<OrderItemResponse> items, OrderStatus nextStatus,
-                         String nextStatusLabel, boolean cancellable) {
+                         String nextStatusLabel, boolean cancellable, boolean canPay, boolean canTake,
+                         boolean canMarkReady, boolean canDeliver) {
         this.id = id;
         this.orderNumber = orderNumber;
         this.customerName = customerName;
@@ -49,6 +55,10 @@ public final class OrderResponse {
         this.nextStatus = nextStatus;
         this.nextStatusLabel = nextStatusLabel;
         this.cancellable = cancellable;
+        this.canPay = canPay;
+        this.canTake = canTake;
+        this.canMarkReady = canMarkReady;
+        this.canDeliver = canDeliver;
     }
 
     public static OrderResponse from(CustomerOrder order) {
@@ -62,13 +72,17 @@ public final class OrderResponse {
                 status.getLabel(),
                 order.getPaymentStatus(),
                 order.getPaymentStatus().getLabel(),
-                order.getPaymentStatus() == PaymentStatus.PAGADO,
+                order.isPaid(),
                 order.getTotal(),
                 order.getCreatedAt(),
                 order.getItems().stream().map(OrderItemResponse::from).collect(Collectors.toList()),
                 next,
                 next == null ? null : next.getLabel(),
-                status.isCancellable());
+                order.canBeCancelled(),
+                order.canBePaid(),
+                order.canBeTaken(),
+                order.canBeMarkedReady(),
+                order.canBeDelivered());
     }
 
     public Long getId() {
@@ -127,12 +141,30 @@ public final class OrderResponse {
         return cancellable;
     }
 
+    public boolean isCanPay() {
+        return canPay;
+    }
+
+    public boolean isCanTake() {
+        return canTake;
+    }
+
+    public boolean isCanMarkReady() {
+        return canMarkReady;
+    }
+
+    public boolean isCanDeliver() {
+        return canDeliver;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof OrderResponse)) return false;
         OrderResponse that = (OrderResponse) o;
-        return paid == that.paid && cancellable == that.cancellable && Objects.equals(id, that.id)
+        return paid == that.paid && cancellable == that.cancellable && canPay == that.canPay
+                && canTake == that.canTake && canMarkReady == that.canMarkReady && canDeliver == that.canDeliver
+                && Objects.equals(id, that.id)
                 && Objects.equals(orderNumber, that.orderNumber) && Objects.equals(customerName, that.customerName)
                 && status == that.status && Objects.equals(statusLabel, that.statusLabel)
                 && paymentStatus == that.paymentStatus && Objects.equals(paymentStatusLabel, that.paymentStatusLabel)
@@ -144,6 +176,7 @@ public final class OrderResponse {
     @Override
     public int hashCode() {
         return Objects.hash(id, orderNumber, customerName, status, statusLabel, paymentStatus, paymentStatusLabel,
-                paid, total, createdAt, items, nextStatus, nextStatusLabel, cancellable);
+                paid, total, createdAt, items, nextStatus, nextStatusLabel, cancellable, canPay, canTake, canMarkReady,
+                canDeliver);
     }
 }

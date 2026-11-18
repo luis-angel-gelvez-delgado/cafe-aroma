@@ -63,12 +63,13 @@ Abre **http://localhost:8080**. MySQL queda expuesto en el puerto **3307** del P
 | Prueba | Tipo | Necesita MySQL |
 |---|---|---|
 | `OrderStatusTest` | Unitaria: transiciones de estado | No |
+| `CustomerOrderTest` | Unitaria: reglas de caja y cocina que dependen del pago | No |
 | `ItemPricingTest` | Unitaria: precios, tamaños y modificadores | No |
 | `OrderServiceIntegrationTest` | Integración: Spring + JPA + H2 (pedido, estados, pago, consultas) | No |
 
 Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la ventana Maven: **Lifecycle → test**.
 
-**Verificación manual en la pantalla:** crear un pedido de varios ítems, avanzar estados, cancelar, marcar pagado, e intentar registrar un pedido vacío (debe mostrar error).
+**Verificación manual en la pantalla:** crear un pedido de varios ítems, cobrarlo, tomarlo y marcarlo listo como cocina, entregarlo; cancelar otro sin pagar, e intentar registrar un pedido vacío (debe mostrar error).
 
 ## 6. Endpoints principales
 | Método | Ruta | Respuestas |
@@ -77,8 +78,12 @@ Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la venta
 | POST | `/api/orders` | 201 · 400 |
 | GET | `/api/orders?status=RECIBIDO` | 200 · 400 |
 | GET | `/api/orders/{id}` | 200 · 404 |
-| PATCH | `/api/orders/{id}/status` | 200 · 400 · 404 · 409 |
+| GET | `/api/orders/kitchen` | 200 |
 | PATCH | `/api/orders/{id}/payment` | 200 · 400 · 404 |
+| PATCH | `/api/orders/{id}/cancel` | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/take` | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/ready` | 200 · 404 · 409 |
+| PATCH | `/api/orders/{id}/deliver` | 200 · 400 · 404 · 409 |
 
 Probar desde PowerShell, en la carpeta del proyecto (`-i` muestra el código HTTP):
 ```powershell
@@ -86,11 +91,14 @@ curl.exe -i http://localhost:8080/api/products
 curl.exe -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-valido.json"
 curl.exe -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-sin-items.json"
 curl.exe -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-modificador-invalido.json"
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/status -H "Content-Type: application/json" -d "@docs/api-ejemplos/estado-en-preparacion.json"
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/status -H "Content-Type: application/json" -d "@docs/api-ejemplos/estado-listo.json"
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/status -H "Content-Type: application/json" -d "@docs/api-ejemplos/estado-cancelado.json"
+curl.exe -i -X PATCH http://localhost:8080/api/orders/1/take
 curl.exe -i -X PATCH http://localhost:8080/api/orders/1/payment -H "Content-Type: application/json" -d "@docs/api-ejemplos/pago-pagado.json"
-curl.exe -i "http://localhost:8080/api/orders?status=LISTO_PARA_RECOGER"
+curl.exe -i http://localhost:8080/api/orders/kitchen
+curl.exe -i -X PATCH http://localhost:8080/api/orders/1/take
+curl.exe -i -X PATCH http://localhost:8080/api/orders/1/ready
+curl.exe -i -X PATCH http://localhost:8080/api/orders/1/cancel
+curl.exe -i -X PATCH http://localhost:8080/api/orders/1/deliver
+curl.exe -i "http://localhost:8080/api/orders?status=ENTREGADO"
 ```
 Usa `curl.exe` (no `curl`): en PowerShell, `curl` es un alias de otro comando.
 

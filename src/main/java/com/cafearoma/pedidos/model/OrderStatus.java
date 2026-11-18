@@ -8,6 +8,10 @@ import java.util.List;
  * Estados del pedido y transiciones permitidas.
  * Recibido → En preparación → Listo para recoger → Entregado.
  * Cancelado solo desde Recibido (antes de pasar a preparación).
+ * <p>
+ * Quién hace cada paso: caja crea, cobra, cancela y entrega; cocina toma
+ * (Recibido → En preparación) y marca Listo para recoger. Las condiciones
+ * que dependen del pago están en {@link CustomerOrder}.
  */
 public enum OrderStatus {
     RECIBIDO("Recibido"),
@@ -53,6 +57,7 @@ public enum OrderStatus {
         }
     }
 
+    /** Cancelable por estado. Además debe estar sin pagar: ver {@link CustomerOrder#canBeCancelled()}. */
     public boolean isCancellable() {
         return canTransitionTo(CANCELADO);
     }
