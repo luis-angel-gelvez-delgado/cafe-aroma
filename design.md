@@ -80,30 +80,41 @@ Las transiciones por estado están en `OrderStatus.canTransitionTo`. Las condici
 | Entregar | Caja | Listo para recoger → Entregado | Debe estar Pagado |
 
 ## Páginas
-| Ruta | Sección del menú ☰ | Qué hace |
-|---|---|---|
-| `/pedido` | Tomar pedido | Menú y carrito; registra el pedido con el nombre del cliente. `/` redirige aquí. |
-| `/caja` | Pedidos (caja) | Pedidos activos por estado: cobrar, cancelar y entregar. Se actualiza sola. |
-| `/cocina` | Cocina | Por preparar (Recibidos y pagados) y En preparación: Tomar y Listo. Se actualiza sola. |
-| `/historial` | Historial | Pedidos entregados y cancelados. |
+| Ruta | Sección del menú ☰ | Rol | Qué hace |
+|---|---|---|---|
+| `/login` | — | Público | Inicio de sesión. `/` manda a la página del rol. |
+| `/pedido` | Tomar pedido | CAJA | Menú y carrito; registra el pedido con el nombre del cliente. |
+| `/caja` | Pedidos (caja) | CAJA | Pedidos activos por estado: cobrar, cancelar y entregar. Se actualiza sola. |
+| `/cocina` | Cocina | COCINA | Por preparar (Recibidos y pagados) y En preparación: Tomar y Listo. Se actualiza sola. |
+| `/historial` | Historial | CAJA, COCINA | Pedidos entregados y cancelados (solo lectura). |
+
+## Seguridad (Spring Security 5.7)
+- Configuración en `security/SecurityConfig`. Login con página propia (`/login`). Al entrar, caja cae en `/pedido` y cocina en `/cocina`. Cerrar sesión es `POST /logout`.
+- **Usuarios:** `caja` (rol CAJA) y `cocina` (rol COCINA), en memoria. Las contraseñas llegan por `CAJA_PASSWORD` y `COCINA_PASSWORD` y se cifran con BCrypt al arrancar.
+- **Permisos:** se validan por ruta en el servidor. El menú ☰ solo muestra las secciones del rol (`sec:authorize`), pero eso es comodidad y no reemplaza la validación.
+- **Sin sesión:** las páginas mandan al login y la API responde **401** en JSON.
+- **Sin permiso:** la API responde **403** en JSON y las páginas mandan a la página del rol.
+- **CSRF:** activo para el navegador; los scripts envían el token que Thymeleaf pone en `<head>`. Las llamadas con usuario y contraseña (`curl.exe -u`) no lo necesitan.
 
 ## Endpoints
 
-| Método | Ruta | Propósito | Respuestas |
-|---|---|---|---|
-| GET | `/api/products` | Menú con opciones válidas y recargos | 200 |
-| POST | `/api/orders` | Crear pedido `{customerName, items:[{productId, size, modifiers}]}` | 201 · 400 |
-| GET | `/api/orders?status=X` | Listar (filtro opcional por estado) | 200 · 400 (estado inválido) |
-| GET | `/api/orders/{id}` | Detalle | 200 · 404 |
-| GET | `/api/orders/active` | Pedidos activos para caja (Recibido, En preparación, Listo para recoger) | 200 |
-| GET | `/api/orders/kitchen` | Pedidos de cocina: Recibidos pagados y En preparación | 200 |
-| PATCH | `/api/orders/{id}/payment` | Caja cobra `{"paymentStatus":"PAGADO"}` | 200 · 400 · 404 |
-| PATCH | `/api/orders/{id}/cancel` | Caja cancela | 200 · 400 · 404 · 409 |
-| PATCH | `/api/orders/{id}/take` | Cocina toma (→ En preparación) | 200 · 400 · 404 · 409 |
-| PATCH | `/api/orders/{id}/ready` | Cocina marca listo (→ Listo para recoger) | 200 · 404 · 409 |
-| PATCH | `/api/orders/{id}/deliver` | Caja entrega (→ Entregado) | 200 · 400 · 404 · 409 |
+| Método | Ruta | Rol | Propósito | Respuestas |
+|---|---|---|---|---|
+| GET | `/api/products` | CAJA, COCINA | Menú con opciones válidas y recargos | 200 |
+| POST | `/api/orders` | CAJA | Crear pedido `{customerName, items:[{productId, size, modifiers}]}` | 201 · 400 |
+| GET | `/api/orders?status=X` | CAJA, COCINA | Listar (filtro opcional por estado) | 200 · 400 (estado inválido) |
+| GET | `/api/orders/{id}` | CAJA, COCINA | Detalle | 200 · 404 |
+| GET | `/api/orders/active` | CAJA | Pedidos activos (Recibido, En preparación, Listo para recoger) | 200 |
+| GET | `/api/orders/kitchen` | COCINA | Recibidos pagados y En preparación | 200 |
+| PATCH | `/api/orders/{id}/payment` | CAJA | Cobrar `{"paymentStatus":"PAGADO"}` | 200 · 400 · 404 |
+| PATCH | `/api/orders/{id}/cancel` | CAJA | Cancelar | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/deliver` | CAJA | Entregar (→ Entregado) | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/take` | COCINA | Tomar (→ En preparación) | 200 · 400 · 404 · 409 |
+| PATCH | `/api/orders/{id}/ready` | COCINA | Marcar listo (→ Listo para recoger) | 200 · 404 · 409 |
 
-Hay un endpoint por acción (en vez de un `PATCH /status` genérico) para que cada regla y, más adelante, cada rol, quede en una ruta clara.
+Todas responden además **401** sin sesión y **403** si el rol no tiene permiso.
+
+Hay un endpoint por acción (en vez de un `PATCH /status` genérico) para que cada regla y cada rol queden en una ruta clara.
 
 Errores: `{"status": 409, "message": "No se puede pasar un pedido de «En preparación» a «Cancelado». ..."}`
 
@@ -125,6 +136,7 @@ Errores: `{"status": 409, "message": "No se puede pasar un pedido de «En prepar
 com.cafearoma.pedidos
 ├── model        enums (Category, Size, Modifier, OrderStatus, PaymentStatus) y entidades
 ├── repository   interfaces Spring Data JPA
+├── security     SecurityConfig (login, permisos por rol, usuarios) y Roles
 ├── service      OrderService, CatalogService y excepciones de negocio
 ├── dto          clases de entrada y salida (DTO)
 └── web          controladores API, controlador Thymeleaf y manejador de errores

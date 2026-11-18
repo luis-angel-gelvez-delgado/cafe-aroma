@@ -1,9 +1,11 @@
 package com.cafearoma.pedidos.web;
 
 import com.cafearoma.pedidos.dto.ProductResponse;
+import com.cafearoma.pedidos.security.Roles;
 import com.cafearoma.pedidos.service.CatalogService;
 import com.cafearoma.pedidos.service.NotFoundException;
 import com.cafearoma.pedidos.service.OrderService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Páginas de la aplicación (Thymeleaf). Las de Pedidos (caja) y Cocina solo entregan el
  * esqueleto: live-board.js las llena consultando la API, que usa los mismos servicios.
+ * Qué rol entra a cada página se define en SecurityConfig.
  */
 @Controller
 public class PageController {
@@ -29,9 +32,19 @@ public class PageController {
         this.orderService = orderService;
     }
 
+    /** Cada rol cae en su página: caja en Tomar pedido, cocina en Cocina. */
     @GetMapping("/")
-    public String home() {
-        return "redirect:/pedido";
+    public String home(Authentication authentication) {
+        return "redirect:" + Roles.homePath(authentication);
+    }
+
+    /** Login propio. Si ya hay sesión, manda a la página del rol. */
+    @GetMapping("/login")
+    public String login(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            return "redirect:" + Roles.homePath(authentication);
+        }
+        return "login";
     }
 
     /** Tomar pedido: menú y carrito. */

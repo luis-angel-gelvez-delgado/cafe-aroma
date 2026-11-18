@@ -31,6 +31,8 @@ services:
       DB_NAME: cafe_aroma
       DB_USERNAME: cafe_app
       DB_PASSWORD: ${DB_PASSWORD}
+      CAJA_PASSWORD: ${CAJA_PASSWORD}
+      COCINA_PASSWORD: ${COCINA_PASSWORD}
       TZ: America/Bogota
     ports:
       - "8080:8080"

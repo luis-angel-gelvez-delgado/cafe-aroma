@@ -7,6 +7,13 @@
     const submitButton = document.getElementById('submit-order');
     const errorBox = document.getElementById('order-error');
 
+    // Token CSRF que pone Thymeleaf en <head>: Spring Security lo exige en POST/PATCH.
+    function csrfHeaders() {
+        const token = document.querySelector('meta[name="_csrf"]');
+        const header = document.querySelector('meta[name="_csrf_header"]');
+        return token && header ? { [header.content]: token.content } : {};
+    }
+
     document.querySelectorAll('.product').forEach(card => {
         card.querySelector('.add-item').addEventListener('click', () => {
             const sizeSelect = card.querySelector('.size');
@@ -84,9 +91,13 @@
         try {
             const response = await fetch('/api/orders', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: Object.assign({ 'Content-Type': 'application/json' }, csrfHeaders()),
                 body: JSON.stringify(body)
             });
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
                 showError(data.message || 'No se pudo registrar el pedido (error ' + response.status + ').');

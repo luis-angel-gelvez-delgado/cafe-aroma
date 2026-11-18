@@ -14,6 +14,7 @@ Digitalizar el cuaderno de pedidos del mostrador: registrar pedidos con sus íte
 | F4 | Páginas separadas con menú ☰: Tomar pedido, Pedidos (caja), Cocina e Historial; caja y cocina se actualizan solas | Alcance Desarrollo: "pantalla de mostrador" |
 | F5 | Registrar el pago en caja antes de que cocina prepare | Regla 3 (extensión pequeña) |
 | F6 | Consultar el menú con precios | Historia "ver el menú con precios" (Must) |
+| F7 | Login por rol: CAJA y COCINA, cada uno con sus páginas y sus acciones de la API | Separación caja/cocina |
 
 ## Criterios de aceptación
 - **CA1** Un pedido sin ítems se rechaza con un mensaje claro (API: 400).
@@ -29,6 +30,9 @@ Digitalizar el cuaderno de pedidos del mostrador: registrar pedidos con sus íte
 - **CA9** Caja registra el pago una sola vez: Pendiente → Pagado, sin vuelta a Pendiente (400). No se cobra un pedido cancelado (400).
 - **CA10** Todo pedido nuevo inicia en Recibido y con pago Pendiente.
 - **CA11** Cada pedido tiene un número visible (`#0001`) y el nombre del cliente.
+- **CA12** Sin sesión, las páginas mandan al login y la API responde 401.
+- **CA13** CAJA ve Tomar pedido, Pedidos (caja) e Historial; COCINA ve Cocina e Historial (solo lectura). Al entrar, caja cae en Tomar pedido y cocina en Cocina.
+- **CA14** Entrar por URL a una página de otro rol manda a la página del propio rol; una acción de la API de otro rol responde 403.
 
 ## Reglas de negocio (del reto)
 1. Un pedido tiene 1 o más ítems; cada ítem es un producto con tamaño (si aplica) y 0 o más modificadores.
@@ -39,7 +43,7 @@ Digitalizar el cuaderno de pedidos del mostrador: registrar pedidos con sus íte
 6. Nombre del cliente o número de orden como identificador visible.
 
 ## Fuera de alcance
-Autenticación y roles en el sistema · pasarelas de pago · inventario · "agotado hoy" (marcado *Won't* en el reto) · domicilios y reservas · notificaciones · reportes financieros · edición de pedidos ya creados · cantidades por ítem.
+Administración de usuarios desde la app · pasarelas de pago · inventario · "agotado hoy" (marcado *Won't* en el reto) · domicilios y reservas · notificaciones · reportes financieros · edición de pedidos ya creados · cantidades por ítem.
 
 ## Supuestos (pendientes de validar con el mentor)
 - **S1 Precios base (COP):** Espresso 4.000 · Americano 4.500 · Capuchino 6.500 · Latte 7.000 · Chocolate Caliente 6.000 · Frappé de Café 10.000 · Té Helado 7.000 · Croissant 5.000 · Muffin 5.500 · Sándwich 9.500.
@@ -51,3 +55,4 @@ Autenticación y roles en el sistema · pasarelas de pago · inventario · "agot
 - **S7** Se cobra antes de preparar: caja crea y cobra, cocina toma y marca listo, caja entrega.
 - **S8** Cada ítem es una unidad; para dos lattes se agregan dos ítems.
 - **S9** Cancelado es un estado final.
+- **S10** Hay dos usuarios fijos, `caja` y `cocina`, en memoria. Sus contraseñas vienen de variables de entorno y se guardan cifradas con BCrypt.

@@ -6,7 +6,7 @@ Aplicación web + API REST para registrar pedidos de mostrador, calcular su tota
 - Uso crítico de IA: [`docs/uso-critico-ia.md`](docs/uso-critico-ia.md) · Guion de la demo: [`docs/guion-demo.md`](docs/guion-demo.md)
 
 ## Tecnologías
-Java 8 · Spring Boot 2.7.18 (Web MVC, Data JPA, Thymeleaf) · MySQL 8 · Maven · JUnit 5 + Spring Boot Test (H2 en memoria solo para pruebas) · Git.
+Java 8 · Spring Boot 2.7.18 (Web MVC, Data JPA, Thymeleaf, Spring Security) · MySQL 8 · Maven · JUnit 5 + Spring Boot Test (H2 en memoria solo para pruebas) · Git.
 
 ## Requisitos previos
 | Herramienta | Comprobar | Nota |
@@ -33,16 +33,26 @@ La contraseña **nunca** se escribe en el código ni en Git.
 | Variable | Obligatoria | Valor por defecto |
 |---|---|---|
 | `DB_PASSWORD` | Sí | — (si falta, la app no arranca) |
+| `CAJA_PASSWORD` | Sí | — contraseña del usuario `caja` |
+| `COCINA_PASSWORD` | Sí | — contraseña del usuario `cocina` |
 | `DB_USERNAME` | No | `cafe_app` |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | No | `localhost` / `3306` / `cafe_aroma` |
 
-En IntelliJ: **Run → Edit Configurations… → PedidosApplication → Environment variables** → `DB_PASSWORD=tu_contraseña`.
+En IntelliJ: **Run → Edit Configurations… → PedidosApplication → Environment variables** → `DB_PASSWORD=tu_contraseña;CAJA_PASSWORD=...;COCINA_PASSWORD=...`.
 
 ## 4. Ejecutar
 1. IntelliJ: **File → Open** → selecciona la carpeta del proyecto (la que tiene `pom.xml`) → *Open as Project*. Espera a que Maven descargue las dependencias.
 2. Verifica **File → Project Structure → SDK = 1.8** (y **Language level = 8**).
 3. Abre `PedidosApplication.java` y pulsa ▶ (Run).
-4. Navega a **http://localhost:8080**.
+4. Navega a **http://localhost:8080** e inicia sesión.
+
+### Usuarios
+| Usuario | Rol | Entra a | Ve en el menú ☰ |
+|---|---|---|---|
+| `caja` | CAJA | Tomar pedido | Tomar pedido · Pedidos (caja) · Historial |
+| `cocina` | COCINA | Cocina | Cocina · Historial |
+
+Las contraseñas son las de `CAJA_PASSWORD` y `COCINA_PASSWORD`. Se guardan cifradas con BCrypt y nunca van en el código.
 
 ## Ejecutar con Docker (alternativa a instalar MySQL y JDK)
 Solo necesitas **Docker Desktop** abierto. En la carpeta del proyecto (la que tiene `docker-compose.yml`):
@@ -64,12 +74,13 @@ Abre **http://localhost:8080**. MySQL queda expuesto en el puerto **3307** del P
 |---|---|---|
 | `OrderStatusTest` | Unitaria: transiciones de estado | No |
 | `CustomerOrderTest` | Unitaria: reglas de caja y cocina que dependen del pago | No |
+| `SecurityIntegrationTest` | Integración: login, páginas y API por rol (401 / 403) | No |
 | `ItemPricingTest` | Unitaria: precios, tamaños y modificadores | No |
 | `OrderServiceIntegrationTest` | Integración: Spring + JPA + H2 (pedido, estados, pago, consultas) | No |
 
 Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la ventana Maven: **Lifecycle → test**.
 
-**Verificación manual:** con dos pestañas abiertas, **Pedidos (caja)** y **Cocina**, crear en **Tomar pedido** un pedido de varios ítems; cobrarlo en caja y ver que aparece solo en cocina (sin recargar); tomarlo y marcarlo listo en cocina; entregarlo en caja y verlo en **Historial**. Cancelar otro sin pagar e intentar registrar un pedido vacío (debe mostrar error).
+**Verificación manual:** con dos navegadores (o una ventana normal y una de incógnito), uno con `caja` en **Pedidos (caja)** y otro con `cocina` en **Cocina**, crear en **Tomar pedido** un pedido de varios ítems; cobrarlo en caja y ver que aparece solo en cocina (sin recargar); tomarlo y marcarlo listo en cocina; entregarlo en caja y verlo en **Historial**. Cancelar otro sin pagar e intentar registrar un pedido vacío (debe mostrar error).
 
 ## 6. Endpoints principales
 | Método | Ruta | Respuestas |
@@ -86,20 +97,22 @@ Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la venta
 | PATCH | `/api/orders/{id}/ready` | 200 · 404 · 409 |
 | PATCH | `/api/orders/{id}/deliver` | 200 · 400 · 404 · 409 |
 
-Probar desde PowerShell, en la carpeta del proyecto (`-i` muestra el código HTTP):
+Todas exigen sesión. Desde PowerShell se usa `-u usuario:contraseña` (`-i` muestra el código HTTP). Cambia `CLAVE_CAJA` y `CLAVE_COCINA` por las de tu `.env`:
 ```powershell
-curl.exe -i http://localhost:8080/api/products
-curl.exe -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-valido.json"
-curl.exe -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-sin-items.json"
-curl.exe -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-modificador-invalido.json"
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/take
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/payment -H "Content-Type: application/json" -d "@docs/api-ejemplos/pago-pagado.json"
-curl.exe -i http://localhost:8080/api/orders/kitchen
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/take
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/ready
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/cancel
-curl.exe -i -X PATCH http://localhost:8080/api/orders/1/deliver
-curl.exe -i "http://localhost:8080/api/orders?status=ENTREGADO"
+curl.exe -i http://localhost:8080/api/orders/active                       # sin usuario → 401
+curl.exe -i -u caja:CLAVE_CAJA http://localhost:8080/api/products
+curl.exe -i -u caja:CLAVE_CAJA -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-valido.json"
+curl.exe -i -u caja:CLAVE_CAJA -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-sin-items.json"
+curl.exe -i -u caja:CLAVE_CAJA -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "@docs/api-ejemplos/pedido-modificador-invalido.json"
+curl.exe -i -u cocina:CLAVE_COCINA -X PATCH http://localhost:8080/api/orders/1/take        # sin pagar → 400
+curl.exe -i -u cocina:CLAVE_COCINA -X PATCH http://localhost:8080/api/orders/1/payment -H "Content-Type: application/json" -d "@docs/api-ejemplos/pago-pagado.json"   # cocina no cobra → 403
+curl.exe -i -u caja:CLAVE_CAJA -X PATCH http://localhost:8080/api/orders/1/payment -H "Content-Type: application/json" -d "@docs/api-ejemplos/pago-pagado.json"
+curl.exe -i -u cocina:CLAVE_COCINA http://localhost:8080/api/orders/kitchen
+curl.exe -i -u cocina:CLAVE_COCINA -X PATCH http://localhost:8080/api/orders/1/take
+curl.exe -i -u cocina:CLAVE_COCINA -X PATCH http://localhost:8080/api/orders/1/ready
+curl.exe -i -u caja:CLAVE_CAJA -X PATCH http://localhost:8080/api/orders/1/cancel          # ya no está en Recibido → 409
+curl.exe -i -u caja:CLAVE_CAJA -X PATCH http://localhost:8080/api/orders/1/deliver
+curl.exe -i -u caja:CLAVE_CAJA "http://localhost:8080/api/orders?status=ENTREGADO"
 ```
 Usa `curl.exe` (no `curl`): en PowerShell, `curl` es un alias de otro comando.
 
@@ -128,3 +141,4 @@ cafe-aroma/
 | `Communications link failure` | El servicio MySQL no está corriendo |
 | `Unknown database 'cafe_aroma'` | No se ejecutó `sql/01-crear-base-de-datos.sql` |
 | `Port 8080 was already in use` | Otra app usa el puerto: ciérrala o cambia `server.port` |
+| `Could not resolve placeholder 'CAJA_PASSWORD'` | Faltan `CAJA_PASSWORD` / `COCINA_PASSWORD` en `.env` o en la configuración de ejecución |

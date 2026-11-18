@@ -23,6 +23,13 @@
             ['canDeliver', 'Entregar', 'primary', 'deliver']
         ];
 
+    // Token CSRF que pone Thymeleaf en <head>: Spring Security lo exige en POST/PATCH.
+    function csrfHeaders() {
+        const token = document.querySelector('meta[name="_csrf"]');
+        const header = document.querySelector('meta[name="_csrf_header"]');
+        return token && header ? { [header.content]: token.content } : {};
+    }
+
     const money = value => '$' + Number(value).toLocaleString('es-CO', { maximumFractionDigits: 0 });
 
     // La API devuelve una unidad por ítem: aquí se agrupan las iguales → "3 × Latte · Grande (...)".
@@ -103,6 +110,10 @@
         if (busy) return;
         try {
             const response = await fetch(source, { headers: { Accept: 'application/json' } });
+            if (response.status === 401) {          // la sesión venció
+                window.location.href = '/login';
+                return;
+            }
             if (!response.ok) throw new Error('HTTP ' + response.status);
             render(await response.json());
         } catch (e) {
@@ -115,12 +126,16 @@
         busy = true;
         button.disabled = true;
         try {
-            const options = { method: 'PATCH', headers: { Accept: 'application/json' } };
+            const options = { method: 'PATCH', headers: Object.assign({ Accept: 'application/json' }, csrfHeaders()) };
             if (body) {
                 options.headers['Content-Type'] = 'application/json';
                 options.body = JSON.stringify(body);
             }
             const response = await fetch('/api/orders/' + order.id + '/' + endpoint, options);
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             const data = await response.json().catch(() => ({}));
             if (response.ok) {
                 showMessage('Pedido ' + data.orderNumber + ': ' + data.statusLabel + ' · ' + data.paymentStatusLabel + '.', 'success');
