@@ -42,6 +42,12 @@ public class OrderApiController {
         return orderService.findOrders(status);
     }
 
+    /** GET /api/orders/active → pedidos activos (Recibido, En preparación, Listo para recoger), para caja. */
+    @GetMapping("/active")
+    public List<OrderResponse> active() {
+        return orderService.findActiveOrders();
+    }
+
     @GetMapping("/{id}")
     public OrderResponse get(@PathVariable("id") Long id) {
         return orderService.getOrder(id);

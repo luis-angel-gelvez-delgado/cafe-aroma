@@ -11,7 +11,7 @@ Digitalizar el cuaderno de pedidos del mostrador: registrar pedidos con sus íte
 | F1 | Crear pedido con ítems, tamaños y modificadores; total calculado por el backend | Alcance Desarrollo: "crear pedido"; reglas 1 y 2 |
 | F2 | Listar pedidos por estado | Alcance Desarrollo: "listar pedidos por estado" |
 | F3 | Actualizar estado con transiciones validadas, separando acciones de caja (cobrar, cancelar, entregar) y de cocina (tomar, marcar listo) | Alcance Desarrollo: "actualizar estado"; flujo de estados |
-| F4 | Pantalla de mostrador: menú, armado del pedido, pedidos activos | Alcance Desarrollo: "pantalla de mostrador" |
+| F4 | Páginas separadas con menú ☰: Tomar pedido, Pedidos (caja), Cocina e Historial; caja y cocina se actualizan solas | Alcance Desarrollo: "pantalla de mostrador" |
 | F5 | Registrar el pago en caja antes de que cocina prepare | Regla 3 (extensión pequeña) |
 | F6 | Consultar el menú con precios | Historia "ver el menú con precios" (Must) |
 

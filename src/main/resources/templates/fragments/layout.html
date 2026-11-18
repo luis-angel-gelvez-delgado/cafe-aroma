@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<!-- Piezas comunes de todas las páginas: <head> (título, favicon, estilos) y encabezado con menú ☰ -->
+<head th:fragment="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>v3 · Java 8 · Café Aroma</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M10 22h36v16a16 16 0 0 1-16 16h-4a16 16 0 0 1-16-16z' fill='%236F4E37'/%3E%3Cpath d='M46 27h4a7 7 0 0 1 0 14h-5' fill='none' stroke='%236F4E37' stroke-width='5'/%3E%3Cpath d='M22 6c-3 4 3 6 0 10M32 6c-3 4 3 6 0 10' fill='none' stroke='%236F4E37' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <script th:src="@{/js/nav.js}" defer></script>
+</head>
+<body>
+<header class="topbar" th:fragment="topbar(active)">
+    <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Abrir menú"
+            aria-controls="main-nav" aria-expanded="false">☰</button>
+    <h1>☕ Café Aroma</h1>
+    <p class="topbar-section" th:switch="${active}">
+        <span th:case="'pedido'">Tomar pedido</span>
+        <span th:case="'caja'">Pedidos (caja)</span>
+        <span th:case="'cocina'">Cocina</span>
+        <span th:case="'historial'">Historial</span>
+    </p>
+    <div class="nav-backdrop" id="nav-backdrop" hidden></div>
+    <nav class="main-nav" id="main-nav" aria-label="Secciones">
+        <a th:href="@{/pedido}" th:classappend="${active == 'pedido'} ? 'active'">🧾 Tomar pedido</a>
+        <a th:href="@{/caja}" th:classappend="${active == 'caja'} ? 'active'">💵 Pedidos (caja)</a>
+        <a th:href="@{/cocina}" th:classappend="${active == 'cocina'} ? 'active'">👩‍🍳 Cocina</a>
+        <a th:href="@{/historial}" th:classappend="${active == 'historial'} ? 'active'">📋 Historial</a>
+    </nav>
+</header>
+</body>
+</html>

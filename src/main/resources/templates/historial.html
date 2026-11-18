@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<header th:replace="~{fragments/layout :: topbar('historial')}"></header>
+
+<main class="page">
+    <!-- Historial: entregados y cancelados -->
+    <section class="panel" aria-labelledby="closed-title">
+        <h2 id="closed-title">Entregados y cancelados</h2>
+        <p class="empty" th:if="${closedOrders.isEmpty()}">Todavía no hay pedidos cerrados.</p>
+        <table th:unless="${closedOrders.isEmpty()}">
+            <thead>
+            <tr><th>Pedido</th><th>Cliente</th><th>Estado</th><th>Pago</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${closedOrders}">
+                <td th:text="${o.orderNumber}">#0001</td>
+                <td th:text="${o.customerName}">Ana</td>
+                <td><span class="badge" th:classappend="${'status-' + o.status.name().toLowerCase()}"
+                          th:text="${o.statusLabel}">Entregado</span></td>
+                <td th:text="${o.paymentStatusLabel}">Pagado</td>
+                <td>$<span th:text="${#numbers.formatInteger(o.total, 1, 'POINT')}">0</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

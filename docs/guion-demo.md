@@ -1,6 +1,6 @@
 # Guion de la demo (10–15 min)
 
-**Antes de empezar:** MySQL corriendo, la app arrancada, navegador en http://localhost:8080, PowerShell en la carpeta del proyecto y Workbench abierto con `sql/02-consultas-demo.sql`.
+**Antes de empezar:** MySQL corriendo, la app arrancada, navegador con dos pestañas, http://localhost:8080/caja y http://localhost:8080/cocina, PowerShell en la carpeta del proyecto y Workbench abierto con `sql/02-consultas-demo.sql`.
 
 ## 1. Contexto y alcance (2 min)
 - Café Aroma toma pedidos en un cuaderno; el objetivo es digitalizar el mostrador.
@@ -12,12 +12,12 @@
 1. **Menú:** cada producto solo muestra sus opciones válidas (el croissant no tiene tamaños; el frappé no tiene Pequeño).
 2. **Crear pedido:** "Ana": Latte Grande + shot + deslactosada, y Croissant para llevar → total **$18.000**, calculado por el servidor.
 3. **Validación en el backend:** registrar un pedido sin productos → mensaje de error. Marcar a la vez "Para llevar" y "Consumir en el local" → error.
-4. **Cocina no toma pedidos sin pagar:** el pedido nuevo está en Recibido con pago Pendiente y no tiene botón para cocina. Por API, intentar tomarlo → **400**.
+4. **Cocina no ve pedidos sin pagar:** el pedido nuevo aparece en **Pedidos (caja)** como Recibido con pago Pendiente, y la pestaña **Cocina** sigue vacía. Por API, intentar tomarlo → **400**.
    `curl.exe -i -X PATCH http://localhost:8080/api/orders/1/take`
-5. **Caja cobra:** al cobrar desaparece Cancelar (un pedido pagado no se cancela) y aparece el botón de cocina **Tomar**.
-6. **Cocina:** Tomar → En preparación; Listo → Listo para recoger. Por API, intentar cancelar ese pedido → **409** con mensaje.
+5. **Caja cobra:** al cobrar desaparece Cancelar (un pedido pagado no se cancela) y, sin recargar, el pedido aparece en **Cocina** en "Por preparar".
+6. **Cocina:** Tomar → En preparación; Listo → Listo para recoger. Caja lo ve cambiar sola. Por API, intentar cancelar ese pedido → **409** con mensaje.
    `curl.exe -i -X PATCH http://localhost:8080/api/orders/1/cancel`
-7. **Caja entrega:** el pedido pasa a Entregado y aparece en el historial.
+7. **Caja entrega:** el pedido pasa a Entregado y aparece en **Historial** (menú ☰).
 
 ## 3. SQL (1–2 min)
 - Mostrar el diagrama ER de `design.md` y por qué `order_item.price` congela el precio cobrado.

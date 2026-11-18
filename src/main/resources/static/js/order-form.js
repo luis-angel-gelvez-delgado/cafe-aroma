@@ -92,7 +92,7 @@
                 showError(data.message || 'No se pudo registrar el pedido (error ' + response.status + ').');
                 return;
             }
-            window.location.href = '/?nuevo=' + data.id;
+            window.location.href = '/pedido?nuevo=' + data.id;
         } catch (e) {
             showError('No hay conexión con el servidor.');
         } finally {

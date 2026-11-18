@@ -69,7 +69,7 @@ Abre **http://localhost:8080**. MySQL queda expuesto en el puerto **3307** del P
 
 Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la ventana Maven: **Lifecycle → test**.
 
-**Verificación manual en la pantalla:** crear un pedido de varios ítems, cobrarlo, tomarlo y marcarlo listo como cocina, entregarlo; cancelar otro sin pagar, e intentar registrar un pedido vacío (debe mostrar error).
+**Verificación manual:** con dos pestañas abiertas, **Pedidos (caja)** y **Cocina**, crear en **Tomar pedido** un pedido de varios ítems; cobrarlo en caja y ver que aparece solo en cocina (sin recargar); tomarlo y marcarlo listo en cocina; entregarlo en caja y verlo en **Historial**. Cancelar otro sin pagar e intentar registrar un pedido vacío (debe mostrar error).
 
 ## 6. Endpoints principales
 | Método | Ruta | Respuestas |
@@ -78,6 +78,7 @@ Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la venta
 | POST | `/api/orders` | 201 · 400 |
 | GET | `/api/orders?status=RECIBIDO` | 200 · 400 |
 | GET | `/api/orders/{id}` | 200 · 404 |
+| GET | `/api/orders/active` | 200 |
 | GET | `/api/orders/kitchen` | 200 |
 | PATCH | `/api/orders/{id}/payment` | 200 · 400 · 404 |
 | PATCH | `/api/orders/{id}/cancel` | 200 · 400 · 404 · 409 |
@@ -114,8 +115,8 @@ cafe-aroma/
     │   ├── model/  repository/  service/  dto/  web/
     ├── main/resources/
     │   ├── application.properties  schema.sql  data.sql
-    │   ├── templates/counter.html
-    │   └── static/css/styles.css  static/js/order-form.js
+    │   ├── templates/  pedido · caja · cocina · historial  y  fragments/layout.html (encabezado y menú ☰)
+    │   └── static/css/styles.css  static/js/  order-form.js · live-board.js · nav.js
     └── test/  (pruebas unitarias e integración + application-test.properties)
 ```
 

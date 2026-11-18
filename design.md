@@ -6,7 +6,8 @@ Una sola aplicación Spring Boot organizada por capas. La pantalla y la API usan
 ```
 Navegador (Thymeleaf + JS)        Cliente REST (PowerShell / Postman)
         │                                    │
- CounterController (/)            OrderApiController / ProductApiController (/api)
+ PageController (/pedido, /caja,     OrderApiController / ProductApiController (/api)
+   /cocina, /historial)
         └───────────────┬────────────────────┘
                OrderService · CatalogService   ← reglas de negocio
                         │
@@ -78,6 +79,14 @@ Las transiciones por estado están en `OrderStatus.canTransitionTo`. Las condici
 | Listo | Cocina | En preparación → Listo para recoger | — |
 | Entregar | Caja | Listo para recoger → Entregado | Debe estar Pagado |
 
+## Páginas
+| Ruta | Sección del menú ☰ | Qué hace |
+|---|---|---|
+| `/pedido` | Tomar pedido | Menú y carrito; registra el pedido con el nombre del cliente. `/` redirige aquí. |
+| `/caja` | Pedidos (caja) | Pedidos activos por estado: cobrar, cancelar y entregar. Se actualiza sola. |
+| `/cocina` | Cocina | Por preparar (Recibidos y pagados) y En preparación: Tomar y Listo. Se actualiza sola. |
+| `/historial` | Historial | Pedidos entregados y cancelados. |
+
 ## Endpoints
 
 | Método | Ruta | Propósito | Respuestas |
@@ -86,6 +95,7 @@ Las transiciones por estado están en `OrderStatus.canTransitionTo`. Las condici
 | POST | `/api/orders` | Crear pedido `{customerName, items:[{productId, size, modifiers}]}` | 201 · 400 |
 | GET | `/api/orders?status=X` | Listar (filtro opcional por estado) | 200 · 400 (estado inválido) |
 | GET | `/api/orders/{id}` | Detalle | 200 · 404 |
+| GET | `/api/orders/active` | Pedidos activos para caja (Recibido, En preparación, Listo para recoger) | 200 |
 | GET | `/api/orders/kitchen` | Pedidos de cocina: Recibidos pagados y En preparación | 200 |
 | PATCH | `/api/orders/{id}/payment` | Caja cobra `{"paymentStatus":"PAGADO"}` | 200 · 400 · 404 |
 | PATCH | `/api/orders/{id}/cancel` | Caja cancela | 200 · 400 · 404 · 409 |
@@ -105,7 +115,8 @@ Errores: `{"status": 409, "message": "No se puede pasar un pedido de «En prepar
 | Tablas creadas con `schema.sql`, no por Hibernate | El SQL queda visible y revisable (fundamento SQL del Bloque 1). |
 | Entidad `CustomerOrder`, tabla `orders` | `ORDER` es palabra reservada en SQL y JPQL. |
 | DTO (clases con getters) en la API | No se exponen las entidades; la respuesta incluye etiquetas y acciones permitidas. |
-| Thymeleaf + un archivo JS pequeño | Thymeleaf pinta el menú y el tablero; el JS solo arma el carrito y llama a `POST /api/orders`. |
+| Thymeleaf + JS pequeño por página | Thymeleaf pinta el menú y el historial, y comparte encabezado y menú ☰ con un fragmento (`fragments/layout.html`). `order-form.js` arma el carrito y llama a `POST /api/orders`. |
+| Caja y Cocina se actualizan con `fetch` cada 7 s | `live-board.js` consulta `/api/orders/active` o `/api/orders/kitchen` y repinta el tablero sin recargar. Los botones salen de las banderas del servidor y cada acción vuelve a pasar por las reglas del backend. |
 | H2 solo en pruebas | Las pruebas de integración corren sin MySQL instalado. |
 | Spring Boot 2.7.18 + Java 8 | El reto pide Java 8, y 2.7.x es la última línea de Spring Boot compatible con Java 8 (Spring Boot 3 y 4 exigen Java 17+). |
 

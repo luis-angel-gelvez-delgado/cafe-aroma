@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<header th:replace="~{fragments/layout :: topbar('caja')}"></header>
+
+<!-- El tablero lo pinta live-board.js consultando la API cada pocos segundos, sin recargar la página -->
+<main class="page" id="live-board" data-mode="caja">
+    <section class="panel">
+        <div class="board-head">
+            <h2>Pedidos activos</h2>
+            <span class="muted" id="last-update"></span>
+        </div>
+        <p class="hint">Cobra los pendientes, cancela los que aún se pueden cancelar y entrega los que están listos.</p>
+        <p id="board-message" class="alert" hidden></p>
+        <div class="board board-caja">
+            <div class="column" data-status="RECIBIDO">
+                <h3><span class="badge status-recibido">Recibido</span> <span class="count">0</span></h3>
+                <div class="cards"><p class="empty">Cargando…</p></div>
+            </div>
+            <div class="column" data-status="EN_PREPARACION">
+                <h3><span class="badge status-en_preparacion">En preparación</span> <span class="count">0</span></h3>
+                <div class="cards"><p class="empty">Cargando…</p></div>
+            </div>
+            <div class="column" data-status="LISTO_PARA_RECOGER">
+                <h3><span class="badge status-listo_para_recoger">Listo para recoger</span> <span class="count">0</span></h3>
+                <div class="cards"><p class="empty">Cargando…</p></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script th:src="@{/js/live-board.js}"></script>
+</body>
+</html>

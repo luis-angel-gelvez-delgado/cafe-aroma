@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<header th:replace="~{fragments/layout :: topbar('pedido')}"></header>
+
+<main class="page">
+    <!-- Mensajes del servidor -->
+    <p class="alert success" th:if="${createdOrder != null}">
+        Pedido <strong th:text="${createdOrder.orderNumber}">#0001</strong> registrado para
+        <strong th:text="${createdOrder.customerName}">Ana</strong>.
+        Total calculado por el servidor:
+        <strong>$<span th:text="${#numbers.formatInteger(createdOrder.total, 1, 'POINT')}">0</span></strong>
+    </p>
+    <p class="alert success" th:if="${success != null}" th:text="${success}">Éxito</p>
+    <p class="alert error" th:if="${error != null}" th:text="${error}">Error</p>
+
+    <div class="order-area">
+        <!-- Menú: solo muestra las opciones válidas de cada producto -->
+        <section class="panel" aria-labelledby="menu-title">
+            <h2 id="menu-title">Menú</h2>
+            <div class="category" th:each="group : ${menu}">
+                <h3 th:text="${group.key}">Categoría</h3>
+                <div class="product-grid">
+                    <article class="product" th:each="p : ${group.value}"
+                             th:attr="data-product-id=${p.id},data-product-name=${p.name}">
+                        <h4 th:text="${p.name}">Producto</h4>
+                        <p class="price">Desde $<span th:text="${#numbers.formatInteger(p.basePrice, 1, 'POINT')}">0</span></p>
+
+                        <label class="field" th:if="${!p.sizes.isEmpty()}">Tamaño
+                            <select class="size">
+                                <option th:each="s : ${p.sizes}" th:value="${s.code}"
+                                        th:attr="data-label=${s.label}" th:text="${s.displayLabel}">Mediano</option>
+                            </select>
+                        </label>
+
+                        <fieldset class="modifiers" th:if="${!p.modifiers.isEmpty()}">
+                            <legend>Opciones</legend>
+                            <label th:each="m : ${p.modifiers}">
+                                <input type="checkbox" class="modifier" th:value="${m.code}"
+                                       th:attr="data-label=${m.label}">
+                                <span th:text="${m.displayLabel}">Opción</span>
+                            </label>
+                        </fieldset>
+
+                        <div class="add-row">
+                            <label class="qty-field">Cant.
+                                <input type="number" class="quantity" min="1" max="20" value="1">
+                            </label>
+                            <button type="button" class="btn secondary add-item">Agregar</button>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pedido en curso (se arma en el navegador y se envía a POST /api/orders) -->
+        <aside class="panel cart" aria-labelledby="cart-title">
+            <h2 id="cart-title">Pedido en curso</h2>
+            <label class="field">Nombre del cliente
+                <input type="text" id="customer-name" maxlength="60" placeholder="Ej. Ana" autocomplete="off">
+            </label>
+            <ul id="cart-items" class="cart-items"></ul>
+            <p id="order-error" class="alert error" hidden></p>
+            <button type="button" id="submit-order" class="btn primary">Registrar pedido</button>
+            <p class="hint">El total y las validaciones los hace el servidor al registrar.</p>
+        </aside>
+    </div>
+
+</main>
+
+<script th:src="@{/js/order-form.js}"></script>
+</body>
+</html>
