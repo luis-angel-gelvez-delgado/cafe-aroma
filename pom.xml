@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Spring Boot 4.1.x (versión estable vigente, compatible con Java 21) -->
+    <!-- Spring Boot 2.7.x: la última línea de Spring Boot que funciona con Java 8 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>2.7.18</version>
         <relativePath/>
     </parent>
 
@@ -19,14 +19,14 @@
     <description>Módulo de pedidos de mostrador y recogida - Café Aroma</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>1.8</java.version>
     </properties>
 
     <dependencies>
-        <!-- Controladores web y API REST (en Spring Boot 4 reemplaza a spring-boot-starter-web) -->
+        <!-- Controladores web y API REST -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <!-- Páginas HTML del mostrador -->
         <dependency>

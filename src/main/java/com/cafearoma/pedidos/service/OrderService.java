@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Reglas de negocio de los pedidos. La API REST y la pantalla Thymeleaf
@@ -43,7 +44,7 @@ public class OrderService {
         if (request == null) {
             throw new BusinessRuleException("La solicitud del pedido está vacía.");
         }
-        String customerName = request.customerName() == null ? "" : request.customerName().trim();
+        String customerName = request.getCustomerName() == null ? "" : request.getCustomerName().trim();
         if (customerName.isEmpty()) {
             throw new BusinessRuleException("El nombre del cliente es obligatorio: se usa para llamar el pedido.");
         }
@@ -51,21 +52,21 @@ public class OrderService {
             throw new BusinessRuleException("El nombre del cliente admite máximo "
                     + MAX_CUSTOMER_NAME_LENGTH + " caracteres.");
         }
-        if (request.items() == null || request.items().isEmpty()) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new BusinessRuleException("El pedido debe tener al menos un producto.");
         }
 
         CustomerOrder order = new CustomerOrder(customerName);
-        for (OrderItemRequest itemRequest : request.items()) {
-            if (itemRequest == null || itemRequest.productId() == null) {
+        for (OrderItemRequest itemRequest : request.getItems()) {
+            if (itemRequest == null || itemRequest.getProductId() == null) {
                 throw new BusinessRuleException("Cada ítem debe indicar un producto del menú.");
             }
-            Product product = productRepository.findById(itemRequest.productId())
+            Product product = productRepository.findById(itemRequest.getProductId())
                     .orElseThrow(() -> new BusinessRuleException(
-                            "El producto con id " + itemRequest.productId() + " no existe en el menú."));
-            Set<Modifier> modifiers = toModifierSet(itemRequest.modifiers());
-            BigDecimal price = calculateItemPrice(product, itemRequest.size(), modifiers);
-            order.addItem(new OrderItem(product, itemRequest.size(), modifiers, price));
+                            "El producto con id " + itemRequest.getProductId() + " no existe en el menú."));
+            Set<Modifier> modifiers = toModifierSet(itemRequest.getModifiers());
+            BigDecimal price = calculateItemPrice(product, itemRequest.getSize(), modifiers);
+            order.addItem(new OrderItem(product, itemRequest.getSize(), modifiers, price));
         }
         return OrderResponse.from(orderRepository.save(order));
     }
@@ -128,21 +129,21 @@ public class OrderService {
         List<CustomerOrder> orders = status == null
                 ? orderRepository.findAllByOrderByIdDesc()
                 : orderRepository.findByStatusOrderByIdAsc(status);
-        return orders.stream().map(OrderResponse::from).toList();
+        return orders.stream().map(OrderResponse::from).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponse> findActiveOrders() {
         return orderRepository.findByStatusInOrderByIdAsc(OrderStatus.activeStatuses()).stream()
                 .map(OrderResponse::from)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponse> findClosedOrders() {
         return orderRepository.findByStatusInOrderByIdDesc(OrderStatus.closedStatuses()).stream()
                 .map(OrderResponse::from)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

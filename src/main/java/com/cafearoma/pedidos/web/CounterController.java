@@ -37,14 +37,14 @@ public class CounterController {
     @GetMapping("/")
     public String counter(@RequestParam(name = "nuevo", required = false) Long createdOrderId, Model model) {
         Map<String, List<ProductResponse>> menu = catalogService.findAll().stream()
-                .collect(Collectors.groupingBy(ProductResponse::categoryLabel, LinkedHashMap::new, Collectors.toList()));
+                .collect(Collectors.groupingBy(ProductResponse::getCategoryLabel, LinkedHashMap::new, Collectors.toList()));
 
         Map<OrderStatus, List<OrderResponse>> board = new LinkedHashMap<>();
         for (OrderStatus status : OrderStatus.activeStatuses()) {
             board.put(status, new ArrayList<>());
         }
         for (OrderResponse order : orderService.findActiveOrders()) {
-            board.get(order.status()).add(order);
+            board.get(order.getStatus()).add(order);
         }
 
         model.addAttribute("menu", menu);
@@ -67,7 +67,7 @@ public class CounterController {
         try {
             OrderResponse order = orderService.changeStatus(id, status);
             redirect.addFlashAttribute("success",
-                    "Pedido " + order.orderNumber() + " ahora está en «" + order.statusLabel() + "».");
+                    "Pedido " + order.getOrderNumber() + " ahora está en «" + order.getStatusLabel() + "».");
         } catch (BusinessRuleException | NotFoundException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }
@@ -81,7 +81,7 @@ public class CounterController {
         try {
             OrderResponse order = orderService.updatePayment(id, paymentStatus);
             redirect.addFlashAttribute("success",
-                    "Pago del pedido " + order.orderNumber() + ": " + order.paymentStatusLabel() + ".");
+                    "Pago del pedido " + order.getOrderNumber() + ": " + order.getPaymentStatusLabel() + ".");
         } catch (BusinessRuleException | NotFoundException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }

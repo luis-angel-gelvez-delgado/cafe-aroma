@@ -1,9 +1,7 @@
-name: cafe-aroma-v2
-
 services:
   db:
     image: mysql:8.4
-    container_name: cafe-aroma-v2-db
+    container_name: cafe-aroma-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: cafe_aroma
@@ -12,7 +10,7 @@ services:
       TZ: America/Bogota
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ports:
-      - "3308:3306"
+      - "3307:3306"
     volumes:
       - cafe_data:/var/lib/mysql
     healthcheck:
@@ -23,7 +21,7 @@ services:
 
   app:
     build: .
-    container_name: cafe-aroma-v2-app
+    container_name: cafe-aroma-app
     depends_on:
       db:
         condition: service_healthy
@@ -35,7 +33,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       TZ: America/Bogota
     ports:
-      - "8081:8080"
+      - "8080:8080"
 
 volumes:
   cafe_data:

@@ -6,12 +6,12 @@ Aplicación web + API REST para registrar pedidos de mostrador, calcular su tota
 - Uso crítico de IA: [`docs/uso-critico-ia.md`](docs/uso-critico-ia.md) · Guion de la demo: [`docs/guion-demo.md`](docs/guion-demo.md)
 
 ## Tecnologías
-Java 21 · Spring Boot 4.1.1 (Web MVC, Data JPA, Thymeleaf) · MySQL 8 · Maven · JUnit 5 + Spring Boot Test (H2 en memoria solo para pruebas) · Git.
+Java 8 · Spring Boot 2.7.18 (Web MVC, Data JPA, Thymeleaf) · MySQL 8 · Maven · JUnit 5 + Spring Boot Test (H2 en memoria solo para pruebas) · Git.
 
 ## Requisitos previos
 | Herramienta | Comprobar | Nota |
 |---|---|---|
-| JDK 21 | `java -version` | |
+| JDK 8 (1.8) | `java -version` | Por ejemplo Eclipse Temurin 8 |
 | Git | `git --version` | |
 | MySQL Server 8.x | `mysql --version` o el menú Inicio | Ver instalación abajo |
 | IntelliJ IDEA (gratuito) | — | Trae Maven integrado: no hace falta instalar Maven aparte |
@@ -40,7 +40,7 @@ En IntelliJ: **Run → Edit Configurations… → PedidosApplication → Environ
 
 ## 4. Ejecutar
 1. IntelliJ: **File → Open** → selecciona la carpeta del proyecto (la que tiene `pom.xml`) → *Open as Project*. Espera a que Maven descargue las dependencias.
-2. Verifica **File → Project Structure → SDK = 21**.
+2. Verifica **File → Project Structure → SDK = 1.8** (y **Language level = 8**).
 3. Abre `PedidosApplication.java` y pulsa ▶ (Run).
 4. Navega a **http://localhost:8080**.
 

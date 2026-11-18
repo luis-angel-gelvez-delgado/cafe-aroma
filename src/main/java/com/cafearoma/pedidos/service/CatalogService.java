@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CatalogService {
@@ -20,6 +21,6 @@ public class CatalogService {
     public List<ProductResponse> findAll() {
         return productRepository.findAllByOrderByIdAsc().stream()
                 .map(ProductResponse::from)
-                .toList();
+                .collect(Collectors.toList());
     }
 }

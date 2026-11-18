@@ -34,7 +34,7 @@ public class OrderApiController {
     @PostMapping
     public ResponseEntity<OrderResponse> create(@RequestBody CreateOrderRequest request) {
         OrderResponse created = orderService.createOrder(request);
-        return ResponseEntity.created(URI.create("/api/orders/" + created.id())).body(created);
+        return ResponseEntity.created(URI.create("/api/orders/" + created.getId())).body(created);
     }
 
     /** GET /api/orders?status=RECIBIDO → pedidos filtrados por estado (sin filtro: todos). */
@@ -51,11 +51,11 @@ public class OrderApiController {
     /** PATCH /api/orders/{id}/status → 409 si la transición no está permitida. */
     @PatchMapping("/{id}/status")
     public OrderResponse changeStatus(@PathVariable("id") Long id, @RequestBody UpdateStatusRequest request) {
-        return orderService.changeStatus(id, request.status());
+        return orderService.changeStatus(id, request.getStatus());
     }
 
     @PatchMapping("/{id}/payment")
     public OrderResponse updatePayment(@PathVariable("id") Long id, @RequestBody UpdatePaymentRequest request) {
-        return orderService.updatePayment(id, request.paymentStatus());
+        return orderService.updatePayment(id, request.getPaymentStatus());
     }
 }

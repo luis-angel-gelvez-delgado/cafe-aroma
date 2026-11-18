@@ -14,6 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,48 +42,48 @@ class OrderServiceIntegrationTest {
 
     @Test
     void creaPedidoValidoYCalculaElTotal() {
-        OrderResponse created = orderService.createOrder(new CreateOrderRequest("Ana", List.of(
-                new OrderItemRequest(LATTE, Size.GRANDE, List.of(Modifier.SHOT_EXTRA, Modifier.LECHE_DESLACTOSADA)),
-                new OrderItemRequest(CROISSANT, null, List.of(Modifier.PARA_LLEVAR)))));
+        OrderResponse created = orderService.createOrder(new CreateOrderRequest("Ana", Arrays.asList(
+                new OrderItemRequest(LATTE, Size.GRANDE, Arrays.asList(Modifier.SHOT_EXTRA, Modifier.LECHE_DESLACTOSADA)),
+                new OrderItemRequest(CROISSANT, null, Arrays.asList(Modifier.PARA_LLEVAR)))));
 
         // 13000 (latte grande + shot + deslactosada) + 5000 (croissant)
-        assertEquals(0, new BigDecimal("18000").compareTo(created.total()));
-        assertEquals(OrderStatus.RECIBIDO, created.status());
-        assertEquals(PaymentStatus.PENDIENTE, created.paymentStatus());
+        assertEquals(0, new BigDecimal("18000").compareTo(created.getTotal()));
+        assertEquals(OrderStatus.RECIBIDO, created.getStatus());
+        assertEquals(PaymentStatus.PENDIENTE, created.getPaymentStatus());
 
-        OrderResponse reloaded = orderService.getOrder(created.id());
-        assertEquals(2, reloaded.items().size());
-        assertEquals("Ana", reloaded.customerName());
+        OrderResponse reloaded = orderService.getOrder(created.getId());
+        assertEquals(2, reloaded.getItems().size());
+        assertEquals("Ana", reloaded.getCustomerName());
     }
 
     @Test
     void rechazaPedidoSinItems() {
         assertThrows(BusinessRuleException.class,
-                () -> orderService.createOrder(new CreateOrderRequest("Ana", List.of())));
+                () -> orderService.createOrder(new CreateOrderRequest("Ana", Collections.emptyList())));
     }
 
     @Test
     void rechazaNombreDeClienteVacio() {
         assertThrows(BusinessRuleException.class, () -> orderService.createOrder(new CreateOrderRequest("   ",
-                List.of(new OrderItemRequest(CROISSANT, null, List.of())))));
+                Arrays.asList(new OrderItemRequest(CROISSANT, null, Collections.emptyList())))));
     }
 
     @Test
     void rechazaModificadorNoValidoParaElProducto() {
         assertThrows(BusinessRuleException.class, () -> orderService.createOrder(new CreateOrderRequest("Luis",
-                List.of(new OrderItemRequest(CROISSANT, null, List.of(Modifier.SHOT_EXTRA))))));
+                Arrays.asList(new OrderItemRequest(CROISSANT, null, Arrays.asList(Modifier.SHOT_EXTRA))))));
     }
 
     @Test
     void rechazaTamanoIncompatible() {
         assertThrows(BusinessRuleException.class, () -> orderService.createOrder(new CreateOrderRequest("Luis",
-                List.of(new OrderItemRequest(FRAPPE, Size.PEQUENO, List.of())))));
+                Arrays.asList(new OrderItemRequest(FRAPPE, Size.PEQUENO, Collections.emptyList())))));
     }
 
     @Test
     void rechazaProductoInexistente() {
         assertThrows(BusinessRuleException.class, () -> orderService.createOrder(new CreateOrderRequest("Luis",
-                List.of(new OrderItemRequest(999L, null, List.of())))));
+                Arrays.asList(new OrderItemRequest(999L, null, Collections.emptyList())))));
     }
 
     @Test
@@ -91,7 +93,7 @@ class OrderServiceIntegrationTest {
         orderService.changeStatus(id, OrderStatus.LISTO_PARA_RECOGER);
         orderService.updatePayment(id, PaymentStatus.PAGADO);
         OrderResponse delivered = orderService.changeStatus(id, OrderStatus.ENTREGADO);
-        assertEquals(OrderStatus.ENTREGADO, delivered.status());
+        assertEquals(OrderStatus.ENTREGADO, delivered.getStatus());
     }
 
     @Test
@@ -104,7 +106,7 @@ class OrderServiceIntegrationTest {
     @Test
     void permiteCancelarEnRecibido() {
         Long id = createSimpleOrder();
-        assertEquals(OrderStatus.CANCELADO, orderService.changeStatus(id, OrderStatus.CANCELADO).status());
+        assertEquals(OrderStatus.CANCELADO, orderService.changeStatus(id, OrderStatus.CANCELADO).getStatus());
     }
 
     @Test
@@ -136,7 +138,7 @@ class OrderServiceIntegrationTest {
     @Test
     void registraElPago() {
         Long id = createSimpleOrder();
-        assertTrue(orderService.updatePayment(id, PaymentStatus.PAGADO).paid());
+        assertTrue(orderService.updatePayment(id, PaymentStatus.PAGADO).isPaid());
     }
 
     @Test
@@ -151,8 +153,8 @@ class OrderServiceIntegrationTest {
         Long id = createSimpleOrder();
         orderService.changeStatus(id, OrderStatus.EN_PREPARACION);
         List<OrderResponse> inPreparation = orderService.findOrders(OrderStatus.EN_PREPARACION);
-        assertTrue(inPreparation.stream().anyMatch(o -> o.id().equals(id)));
-        assertTrue(orderService.findOrders(OrderStatus.RECIBIDO).stream().noneMatch(o -> o.id().equals(id)));
+        assertTrue(inPreparation.stream().anyMatch(o -> o.getId().equals(id)));
+        assertTrue(orderService.findOrders(OrderStatus.RECIBIDO).stream().noneMatch(o -> o.getId().equals(id)));
     }
 
     @Test
@@ -162,6 +164,6 @@ class OrderServiceIntegrationTest {
 
     private Long createSimpleOrder() {
         return orderService.createOrder(new CreateOrderRequest("Cliente prueba",
-                List.of(new OrderItemRequest(CROISSANT, null, List.of())))).id();
+                Arrays.asList(new OrderItemRequest(CROISSANT, null, Collections.emptyList())))).getId();
     }
 }

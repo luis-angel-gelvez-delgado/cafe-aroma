@@ -7,20 +7,7 @@
     const submitButton = document.getElementById('submit-order');
     const errorBox = document.getElementById('order-error');
 
-    // "Para llevar" y "Para consumir en el local" se excluyen: al marcar una, se desmarca la otra.
-    const EXCLUSIVE = ['PARA_LLEVAR', 'CONSUMIR_EN_LOCAL'];
-
     document.querySelectorAll('.product').forEach(card => {
-        card.querySelectorAll('.modifier').forEach(input => {
-            if (!EXCLUSIVE.includes(input.value)) return;
-            input.addEventListener('change', () => {
-                if (!input.checked) return;
-                card.querySelectorAll('.modifier').forEach(other => {
-                    if (other !== input && EXCLUSIVE.includes(other.value)) other.checked = false;
-                });
-            });
-        });
-
         card.querySelector('.add-item').addEventListener('click', () => {
             const sizeSelect = card.querySelector('.size');
             const checked = [...card.querySelectorAll('.modifier:checked')];

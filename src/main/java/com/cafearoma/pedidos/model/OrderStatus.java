@@ -1,5 +1,7 @@
 package com.cafearoma.pedidos.model;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,33 +27,46 @@ public enum OrderStatus {
     }
 
     public boolean canTransitionTo(OrderStatus next) {
-        return switch (this) {
-            case RECIBIDO -> next == EN_PREPARACION || next == CANCELADO;
-            case EN_PREPARACION -> next == LISTO_PARA_RECOGER;
-            case LISTO_PARA_RECOGER -> next == ENTREGADO;
-            case ENTREGADO, CANCELADO -> false;
-        };
+        switch (this) {
+            case RECIBIDO:
+                return next == EN_PREPARACION || next == CANCELADO;
+            case EN_PREPARACION:
+                return next == LISTO_PARA_RECOGER;
+            case LISTO_PARA_RECOGER:
+                return next == ENTREGADO;
+            default: // ENTREGADO y CANCELADO son estados finales
+                return false;
+        }
     }
 
     /** Siguiente paso del flujo normal, o null si el pedido ya terminó. */
     public OrderStatus nextStep() {
-        return switch (this) {
-            case RECIBIDO -> EN_PREPARACION;
-            case EN_PREPARACION -> LISTO_PARA_RECOGER;
-            case LISTO_PARA_RECOGER -> ENTREGADO;
-            case ENTREGADO, CANCELADO -> null;
-        };
+        switch (this) {
+            case RECIBIDO:
+                return EN_PREPARACION;
+            case EN_PREPARACION:
+                return LISTO_PARA_RECOGER;
+            case LISTO_PARA_RECOGER:
+                return ENTREGADO;
+            default: // ENTREGADO y CANCELADO no tienen siguiente paso
+                return null;
+        }
     }
 
     public boolean isCancellable() {
         return canTransitionTo(CANCELADO);
     }
 
+    private static final List<OrderStatus> ACTIVE =
+            Collections.unmodifiableList(Arrays.asList(RECIBIDO, EN_PREPARACION, LISTO_PARA_RECOGER));
+    private static final List<OrderStatus> CLOSED =
+            Collections.unmodifiableList(Arrays.asList(ENTREGADO, CANCELADO));
+
     public static List<OrderStatus> activeStatuses() {
-        return List.of(RECIBIDO, EN_PREPARACION, LISTO_PARA_RECOGER);
+        return ACTIVE;
     }
 
     public static List<OrderStatus> closedStatuses() {
-        return List.of(ENTREGADO, CANCELADO);
+        return CLOSED;
     }
 }

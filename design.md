@@ -88,10 +88,10 @@ Errores: `{"status": 409, "message": "No se puede pasar un pedido de «Listo par
 | Reglas del menú en `Category` | Un solo lugar define qué tamaños y modificadores admite cada categoría. |
 | Tablas creadas con `schema.sql`, no por Hibernate | El SQL queda visible y revisable (fundamento SQL del Bloque 1). |
 | Entidad `CustomerOrder`, tabla `orders` | `ORDER` es palabra reservada en SQL y JPQL. |
-| DTO (`record`) en la API | No se exponen las entidades; la respuesta incluye etiquetas y acciones permitidas. |
+| DTO (clases con getters) en la API | No se exponen las entidades; la respuesta incluye etiquetas y acciones permitidas. |
 | Thymeleaf + un archivo JS pequeño | Thymeleaf pinta el menú y el tablero; el JS solo arma el carrito y llama a `POST /api/orders`. |
 | H2 solo en pruebas | Las pruebas de integración corren sin MySQL instalado. |
-| Spring Boot 4.1.1 + Java 21 | Versión estable vigente; Java 21 es LTS y ya está instalado. |
+| Spring Boot 2.7.18 + Java 8 | El reto pide Java 8, y 2.7.x es la última línea de Spring Boot compatible con Java 8 (Spring Boot 3 y 4 exigen Java 17+). |
 
 ## Paquetes
 ```
@@ -99,6 +99,6 @@ com.cafearoma.pedidos
 ├── model        enums (Category, Size, Modifier, OrderStatus, PaymentStatus) y entidades
 ├── repository   interfaces Spring Data JPA
 ├── service      OrderService, CatalogService y excepciones de negocio
-├── dto          records de entrada y salida
+├── dto          clases de entrada y salida (DTO)
 └── web          controladores API, controlador Thymeleaf y manejador de errores
 ```
