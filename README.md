@@ -80,7 +80,7 @@ Abre **http://localhost:8080**. MySQL queda expuesto en el puerto **3307** del P
 
 Ejecutar: clic derecho en `src/test/java` → **Run 'All Tests'**, o en la ventana Maven: **Lifecycle → test**.
 
-**Verificación manual:** con dos navegadores (o una ventana normal y una de incógnito), uno con `caja` en **Pedidos (caja)** y otro con `cocina` en **Cocina**, crear en **Tomar pedido** (categoría → producto → opciones) un pedido de varios ítems; cobrarlo en caja y ver que aparece solo en cocina (sin recargar); tomarlo y marcarlo listo en cocina; entregarlo en caja y verlo en **Historial**. Cancelar otro sin pagar e intentar registrar un pedido vacío (debe mostrar error).
+**Verificación manual:** con dos navegadores (o una ventana normal y una de incógnito), uno con `caja` en **Pedidos (caja)** y otro con `cocina` en **Cocina**, crear en **Tomar pedido** (categoría → producto → opciones) un pedido de varios ítems y cobrarlo en el resumen que sale al registrar (o después en caja) y ver que aparece solo en cocina (sin recargar); tomarlo y marcarlo listo en cocina; entregarlo en caja y verlo en **Historial**. Cancelar otro sin pagar e intentar registrar un pedido vacío (debe mostrar error).
 
 ## 6. Endpoints principales
 | Método | Ruta | Respuestas |

@@ -10,6 +10,7 @@
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <script th:src="@{/js/common.js}"></script>
     <script th:src="@{/js/nav.js}" defer></script>
 </head>
 <body>
@@ -39,5 +40,18 @@
         </form>
     </nav>
 </header>
+
+<!-- Ventana emergente compartida (resumen y cobro en Tomar pedido, Ver detalle en Historial) -->
+<div class="modal" id="modal" th:fragment="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h2 id="modal-title">Pedido</h2>
+            <button type="button" class="modal-close" aria-label="Cerrar">✕</button>
+        </div>
+        <div id="modal-body"></div>
+        <p id="modal-error" class="alert error" hidden></p>
+        <div class="modal-actions" id="modal-actions"></div>
+    </div>
+</div>
 </body>
 </html>

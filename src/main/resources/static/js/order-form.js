@@ -24,21 +24,7 @@
 
     // ---------- utilidades ----------
 
-    // Token CSRF que pone Thymeleaf en <head>: Spring Security lo exige en POST/PATCH.
-    function csrfHeaders() {
-        const token = document.querySelector('meta[name="_csrf"]');
-        const header = document.querySelector('meta[name="_csrf_header"]');
-        return token && header ? { [header.content]: token.content } : {};
-    }
-
-    const money = value => '$' + Number(value).toLocaleString('es-CO', { maximumFractionDigits: 0 });
-
-    function el(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text != null) node.textContent = text;
-        return node;
-    }
+    const { csrfHeaders, money, el, orderDetail, openModal, closeModal } = window.CafeAroma;
 
     function tile(title, subtitle, onClick, icon) {
         const button = el('button', 'tile');
@@ -203,11 +189,11 @@
         show('categories');
     });
 
-    function showToast(text) {
+    function showToast(text, ms) {
         toast.textContent = text;
         toast.hidden = false;
         clearTimeout(showToast.timer);
-        showToast.timer = setTimeout(() => { toast.hidden = true; }, 3000);
+        showToast.timer = setTimeout(() => { toast.hidden = true; }, ms || 3000);
     }
 
     // ---------- carrito ----------
@@ -276,13 +262,69 @@
                 showError(data.message || 'No se pudo registrar el pedido (error ' + response.status + ').');
                 return;
             }
-            window.location.href = '/pedido?nuevo=' + data.id;
+            // El pedido ya existe: se limpia el carrito y se ofrece cobrarlo aquí mismo.
+            cart.length = 0;
+            nameInput.value = '';
+            renderCart();
+            show('categories');
+            openCheckout(data);
         } catch (e) {
             showError('No hay conexión con el servidor.');
         } finally {
             submitButton.disabled = false;
         }
     });
+
+    // ---------- resumen y cobro ----------
+
+    // Muestra el pedido con el total que calculó el servidor. "Cobrar" lo deja Pagado y pasa a cocina;
+    // "Cobrar después" lo deja Pendiente y se cobra desde Pedidos (caja).
+    function openCheckout(order) {
+        const modalError = document.getElementById('modal-error');
+        modalError.hidden = true;
+        const note = el('p', 'detail-note', 'Total calculado por el servidor. Al cobrar, el pedido pasa a cocina.');
+        const later = () => showToast('Pedido ' + order.orderNumber + ' registrado con pago pendiente: '
+            + 'cóbralo en Pedidos (caja).', 6000);
+        openModal({
+            title: 'Pedido ' + order.orderNumber + ' · ' + order.customerName,
+            content: [orderDetail(order), note],
+            onDismiss: later,
+            actions: [
+                { label: 'Cobrar después', style: 'secondary', onClick: () => { closeModal(); later(); } },
+                { label: 'Cobrar ' + money(order.total), style: 'primary', onClick: button => pay(order, button) }
+            ]
+        });
+    }
+
+    async function pay(order, button) {
+        const modalError = document.getElementById('modal-error');
+        modalError.hidden = true;
+        button.disabled = true;
+        try {
+            const response = await fetch('/api/orders/' + order.id + '/payment', {
+                method: 'PATCH',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, csrfHeaders()),
+                body: JSON.stringify({ paymentStatus: 'PAGADO' })
+            });
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                modalError.textContent = data.message || 'No se pudo registrar el pago (error ' + response.status + ').';
+                modalError.hidden = false;
+                return;
+            }
+            closeModal();
+            showToast('Pedido ' + data.orderNumber + ' pagado (' + money(data.total) + '): ya está en cocina.', 6000);
+        } catch (e) {
+            modalError.textContent = 'No hay conexión con el servidor.';
+            modalError.hidden = false;
+        } finally {
+            button.disabled = false;
+        }
+    }
 
     // ---------- arranque ----------
 

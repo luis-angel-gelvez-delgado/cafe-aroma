@@ -1,13 +1,11 @@
 package com.cafearoma.pedidos.web;
 
 import com.cafearoma.pedidos.security.Roles;
-import com.cafearoma.pedidos.service.NotFoundException;
 import com.cafearoma.pedidos.service.OrderService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Páginas de la aplicación (Thymeleaf). Las de Pedidos (caja) y Cocina solo entregan el
@@ -38,16 +36,9 @@ public class PageController {
         return "login";
     }
 
-    /** Tomar pedido: kiosko paso a paso. El menú lo carga order-form.js desde GET /api/products. */
+    /** Tomar pedido: kiosko paso a paso, con resumen y cobro al registrar (order-form.js). */
     @GetMapping("/pedido")
-    public String takeOrder(@RequestParam(name = "nuevo", required = false) Long createdOrderId, Model model) {
-        if (createdOrderId != null) {
-            try {
-                model.addAttribute("createdOrder", orderService.getOrder(createdOrderId));
-            } catch (NotFoundException e) {
-                model.addAttribute("error", e.getMessage());
-            }
-        }
+    public String takeOrder() {
         return "pedido";
     }
 

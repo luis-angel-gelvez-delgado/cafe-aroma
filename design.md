@@ -83,7 +83,7 @@ Las transiciones por estado están en `OrderStatus.canTransitionTo`. Las condici
 | Ruta | Sección del menú ☰ | Rol | Qué hace |
 |---|---|---|---|
 | `/login` | — | Público | Inicio de sesión. `/` manda a la página del rol. |
-| `/pedido` | Tomar pedido | CAJA | Kiosko paso a paso (categoría → producto → opciones) con carrito; registra el pedido con el nombre del cliente. |
+| `/pedido` | Tomar pedido | CAJA | Kiosko paso a paso (categoría → producto → opciones) con carrito; registra el pedido y muestra el resumen con el total del servidor para cobrarlo ahí mismo o después. |
 | `/caja` | Pedidos (caja) | CAJA | Pedidos activos por estado: cobrar, cancelar y entregar. Se actualiza sola. |
 | `/cocina` | Cocina | COCINA | Por preparar (Recibidos y pagados) y En preparación: Tomar y Listo. Se actualiza sola. |
 | `/historial` | Historial | CAJA, COCINA | Pedidos entregados y cancelados (solo lectura). |

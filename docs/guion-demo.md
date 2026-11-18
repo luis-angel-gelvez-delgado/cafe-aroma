@@ -11,11 +11,11 @@
 ## 2. Demo funcional (6–7 min)
 0. **Login por rol:** entrar con `caja` en un navegador (cae en Tomar pedido) y con `cocina` en el otro (cae en Cocina). Mostrar que el menú ☰ de cocina no tiene Tomar pedido ni Pedidos (caja), y que si escribe `/caja` en la URL lo devuelve a Cocina.
 1. **Kiosko:** Bebidas calientes → Latte → opciones. Cada producto solo muestra sus opciones válidas (el croissant no tiene tamaños; el frappé no tiene Pequeño) y el precio se va calculando. Mostrar el botón Atrás.
-2. **Crear pedido:** "Ana": Latte Grande + shot + deslactosada, y Croissant para llevar → total **$18.000**, calculado por el servidor.
+2. **Crear pedido:** "Ana": Latte Grande + shot + deslactosada, y Croissant para llevar → al registrar sale el resumen con el total **$18.000** calculado por el servidor. Elegir **Cobrar después** para mostrar el flujo completo.
 3. **Validación en el backend:** registrar un pedido sin productos → mensaje de error. En el croissant, "Para llevar" y "Consumir en el local" no se pueden marcar a la vez; si se envían juntos por API → **400**.
 4. **Cocina no ve pedidos sin pagar:** el pedido nuevo aparece en **Pedidos (caja)** como Recibido con pago Pendiente, y la pestaña **Cocina** sigue vacía. Por API, intentar tomarlo → **400**.
    `curl.exe -i -u cocina:CLAVE_COCINA -X PATCH http://localhost:8080/api/orders/1/take`
-5. **Caja cobra:** al cobrar desaparece Cancelar (un pedido pagado no se cancela) y, sin recargar, el pedido aparece en **Cocina** en "Por preparar".
+5. **Caja cobra** (desde Pedidos (caja); también se puede cobrar en el resumen al registrar): al cobrar desaparece Cancelar (un pedido pagado no se cancela) y, sin recargar, el pedido aparece en **Cocina** en "Por preparar".
 6. **Cocina:** Tomar → En preparación; Listo → Listo para recoger. Caja lo ve cambiar sola. Por API, intentar cancelar ese pedido → **409** con mensaje.
    `curl.exe -i -u caja:CLAVE_CAJA -X PATCH http://localhost:8080/api/orders/1/cancel`
    Y si cocina intenta cobrar por API → **403** (su rol no tiene permiso).

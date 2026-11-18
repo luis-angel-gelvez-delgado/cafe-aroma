@@ -5,16 +5,6 @@
 <header th:replace="~{fragments/layout :: topbar('pedido')}"></header>
 
 <main class="page">
-    <!-- Mensajes del servidor -->
-    <p class="alert success" th:if="${createdOrder != null}">
-        Pedido <strong th:text="${createdOrder.orderNumber}">#0001</strong> registrado para
-        <strong th:text="${createdOrder.customerName}">Ana</strong>.
-        Total calculado por el servidor:
-        <strong>$<span th:text="${#numbers.formatInteger(createdOrder.total, 1, 'POINT')}">0</span></strong>.
-        Ya aparece en Pedidos (caja) para cobrarlo.
-    </p>
-    <p class="alert error" th:if="${error != null}" th:text="${error}">Error</p>
-
     <div class="order-area">
         <!-- Kiosko: Categorías → Productos → Opciones. Lo pinta order-form.js con GET /api/products. -->
         <section class="panel kiosk" aria-live="polite">
@@ -83,7 +73,7 @@
             </label>
             <p id="order-error" class="alert error" hidden></p>
             <button type="button" id="submit-order" class="btn primary big">Registrar pedido</button>
-            <p class="hint">El precio final y las validaciones los hace el servidor al registrar.</p>
+            <p class="hint">Al registrar se muestra el total calculado por el servidor y se puede cobrar de una vez.</p>
         </aside>
     </div>
 
@@ -91,6 +81,7 @@
     <a href="#cart" class="cart-fab" id="cart-fab" hidden>🛒 Ver pedido (<span id="cart-count">0</span>)</a>
 </main>
 
+<div th:replace="~{fragments/layout :: modal}"></div>
 <script th:src="@{/js/order-form.js}"></script>
 </body>
 </html>
