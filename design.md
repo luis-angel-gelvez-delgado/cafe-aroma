@@ -83,7 +83,7 @@ Las transiciones por estado están en `OrderStatus.canTransitionTo`. Las condici
 | Ruta | Sección del menú ☰ | Rol | Qué hace |
 |---|---|---|---|
 | `/login` | — | Público | Inicio de sesión. `/` manda a la página del rol. |
-| `/pedido` | Tomar pedido | CAJA | Menú y carrito; registra el pedido con el nombre del cliente. |
+| `/pedido` | Tomar pedido | CAJA | Kiosko paso a paso (categoría → producto → opciones) con carrito; registra el pedido con el nombre del cliente. |
 | `/caja` | Pedidos (caja) | CAJA | Pedidos activos por estado: cobrar, cancelar y entregar. Se actualiza sola. |
 | `/cocina` | Cocina | COCINA | Por preparar (Recibidos y pagados) y En preparación: Tomar y Listo. Se actualiza sola. |
 | `/historial` | Historial | CAJA, COCINA | Pedidos entregados y cancelados (solo lectura). |
@@ -126,7 +126,7 @@ Errores: `{"status": 409, "message": "No se puede pasar un pedido de «En prepar
 | Tablas creadas con `schema.sql`, no por Hibernate | El SQL queda visible y revisable (fundamento SQL del Bloque 1). |
 | Entidad `CustomerOrder`, tabla `orders` | `ORDER` es palabra reservada en SQL y JPQL. |
 | DTO (clases con getters) en la API | No se exponen las entidades; la respuesta incluye etiquetas y acciones permitidas. |
-| Thymeleaf + JS pequeño por página | Thymeleaf pinta el menú y el historial, y comparte encabezado y menú ☰ con un fragmento (`fragments/layout.html`). `order-form.js` arma el carrito y llama a `POST /api/orders`. |
+| Thymeleaf + JS pequeño por página | Thymeleaf pinta el historial, y comparte encabezado y menú ☰ con un fragmento (`fragments/layout.html`). `order-form.js` carga el menú de `GET /api/products`, arma el kiosko y el carrito, muestra una vista previa del precio con los mismos recargos del servidor y llama a `POST /api/orders`. |
 | Caja y Cocina se actualizan con `fetch` cada 7 s | `live-board.js` consulta `/api/orders/active` o `/api/orders/kitchen` y repinta el tablero sin recargar. Los botones salen de las banderas del servidor y cada acción vuelve a pasar por las reglas del backend. |
 | H2 solo en pruebas | Las pruebas de integración corren sin MySQL instalado. |
 | Spring Boot 2.7.18 + Java 8 | El reto pide Java 8, y 2.7.x es la última línea de Spring Boot compatible con Java 8 (Spring Boot 3 y 4 exigen Java 17+). |

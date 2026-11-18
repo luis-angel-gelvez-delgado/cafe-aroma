@@ -11,7 +11,7 @@ Digitalizar el cuaderno de pedidos del mostrador: registrar pedidos con sus íte
 | F1 | Crear pedido con ítems, tamaños y modificadores; total calculado por el backend | Alcance Desarrollo: "crear pedido"; reglas 1 y 2 |
 | F2 | Listar pedidos por estado | Alcance Desarrollo: "listar pedidos por estado" |
 | F3 | Actualizar estado con transiciones validadas, separando acciones de caja (cobrar, cancelar, entregar) y de cocina (tomar, marcar listo) | Alcance Desarrollo: "actualizar estado"; flujo de estados |
-| F4 | Páginas separadas con menú ☰: Tomar pedido, Pedidos (caja), Cocina e Historial; caja y cocina se actualizan solas | Alcance Desarrollo: "pantalla de mostrador" |
+| F4 | Páginas separadas con menú ☰: Tomar pedido (kiosko paso a paso: categoría → producto → opciones), Pedidos (caja), Cocina e Historial; caja y cocina se actualizan solas | Alcance Desarrollo: "pantalla de mostrador" |
 | F5 | Registrar el pago en caja antes de que cocina prepare | Regla 3 (extensión pequeña) |
 | F6 | Consultar el menú con precios | Historia "ver el menú con precios" (Must) |
 | F7 | Login por rol: CAJA y COCINA, cada uno con sus páginas y sus acciones de la API | Separación caja/cocina |
@@ -30,6 +30,7 @@ Digitalizar el cuaderno de pedidos del mostrador: registrar pedidos con sus íte
 - **CA9** Caja registra el pago una sola vez: Pendiente → Pagado, sin vuelta a Pendiente (400). No se cobra un pedido cancelado (400).
 - **CA10** Todo pedido nuevo inicia en Recibido y con pago Pendiente.
 - **CA11** Cada pedido tiene un número visible (`#0001`) y el nombre del cliente.
+- **CA11b** Tomar pedido funciona por pasos con botones grandes: categoría, producto, opciones (tamaño si aplica, solo las adiciones de su categoría, cantidad 1 a 20) y Agregar al pedido, con Atrás entre pasos. Muestra una vista previa del precio; el que manda es el que calcula el servidor.
 - **CA12** Sin sesión, las páginas mandan al login y la API responde 401.
 - **CA13** CAJA ve Tomar pedido, Pedidos (caja) e Historial; COCINA ve Cocina e Historial (solo lectura). Al entrar, caja cae en Tomar pedido y cocina en Cocina.
 - **CA14** Entrar por URL a una página de otro rol manda a la página del propio rol; una acción de la API de otro rol responde 403.

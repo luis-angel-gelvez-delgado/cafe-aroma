@@ -10,63 +10,85 @@
         Pedido <strong th:text="${createdOrder.orderNumber}">#0001</strong> registrado para
         <strong th:text="${createdOrder.customerName}">Ana</strong>.
         Total calculado por el servidor:
-        <strong>$<span th:text="${#numbers.formatInteger(createdOrder.total, 1, 'POINT')}">0</span></strong>
+        <strong>$<span th:text="${#numbers.formatInteger(createdOrder.total, 1, 'POINT')}">0</span></strong>.
+        Ya aparece en Pedidos (caja) para cobrarlo.
     </p>
-    <p class="alert success" th:if="${success != null}" th:text="${success}">Éxito</p>
     <p class="alert error" th:if="${error != null}" th:text="${error}">Error</p>
 
     <div class="order-area">
-        <!-- Menú: solo muestra las opciones válidas de cada producto -->
-        <section class="panel" aria-labelledby="menu-title">
-            <h2 id="menu-title">Menú</h2>
-            <div class="category" th:each="group : ${menu}">
-                <h3 th:text="${group.key}">Categoría</h3>
-                <div class="product-grid">
-                    <article class="product" th:each="p : ${group.value}"
-                             th:attr="data-product-id=${p.id},data-product-name=${p.name}">
-                        <h4 th:text="${p.name}">Producto</h4>
-                        <p class="price">Desde $<span th:text="${#numbers.formatInteger(p.basePrice, 1, 'POINT')}">0</span></p>
+        <!-- Kiosko: Categorías → Productos → Opciones. Lo pinta order-form.js con GET /api/products. -->
+        <section class="panel kiosk" aria-live="polite">
+            <div class="kiosk-nav">
+                <button type="button" class="btn secondary back-btn" id="kiosk-back" hidden>← Atrás</button>
+                <ol class="steps" id="kiosk-steps">
+                    <li data-step="categories">Categoría</li>
+                    <li data-step="products">Producto</li>
+                    <li data-step="options">Opciones</li>
+                </ol>
+            </div>
+            <p id="kiosk-toast" class="alert success" hidden></p>
 
-                        <label class="field" th:if="${!p.sizes.isEmpty()}">Tamaño
-                            <select class="size">
-                                <option th:each="s : ${p.sizes}" th:value="${s.code}"
-                                        th:attr="data-label=${s.label}" th:text="${s.displayLabel}">Mediano</option>
-                            </select>
-                        </label>
-
-                        <fieldset class="modifiers" th:if="${!p.modifiers.isEmpty()}">
-                            <legend>Opciones</legend>
-                            <label th:each="m : ${p.modifiers}">
-                                <input type="checkbox" class="modifier" th:value="${m.code}"
-                                       th:attr="data-label=${m.label}">
-                                <span th:text="${m.displayLabel}">Opción</span>
-                            </label>
-                        </fieldset>
-
-                        <div class="add-row">
-                            <label class="qty-field">Cant.
-                                <input type="number" class="quantity" min="1" max="20" value="1">
-                            </label>
-                            <button type="button" class="btn secondary add-item">Agregar</button>
-                        </div>
-                    </article>
+            <!-- Paso 1 -->
+            <div class="kiosk-screen" data-screen="categories">
+                <h2>¿Qué va a pedir?</h2>
+                <div class="tile-grid tile-grid-big" id="category-list">
+                    <p class="empty">Cargando menú…</p>
                 </div>
+            </div>
+
+            <!-- Paso 2 -->
+            <div class="kiosk-screen" data-screen="products" hidden>
+                <h2 id="products-title">Productos</h2>
+                <div class="tile-grid" id="product-list"></div>
+            </div>
+
+            <!-- Paso 3 -->
+            <div class="kiosk-screen" data-screen="options" hidden>
+                <h2 id="options-title">Producto</h2>
+
+                <div class="option-group" id="size-group">
+                    <h3>Tamaño</h3>
+                    <div class="choice-grid" id="size-list"></div>
+                </div>
+
+                <div class="option-group" id="modifier-group">
+                    <h3>Adiciones</h3>
+                    <div class="choice-grid" id="modifier-list"></div>
+                </div>
+
+                <div class="option-group">
+                    <h3>Cantidad</h3>
+                    <div class="stepper">
+                        <button type="button" class="btn secondary" id="qty-minus" aria-label="Quitar uno">−</button>
+                        <output id="qty-value" aria-live="polite">1</output>
+                        <button type="button" class="btn secondary" id="qty-plus" aria-label="Agregar uno">+</button>
+                    </div>
+                </div>
+
+                <div class="price-preview">
+                    <span id="unit-price">$0 c/u</span>
+                    <strong id="line-price">$0</strong>
+                </div>
+                <button type="button" class="btn primary big" id="add-to-order">Agregar al pedido</button>
             </div>
         </section>
 
-        <!-- Pedido en curso (se arma en el navegador y se envía a POST /api/orders) -->
-        <aside class="panel cart" aria-labelledby="cart-title">
+        <!-- Pedido en curso (se envía a POST /api/orders) -->
+        <aside class="panel cart" id="cart" aria-labelledby="cart-title">
             <h2 id="cart-title">Pedido en curso</h2>
+            <ul id="cart-items" class="cart-items"></ul>
+            <p class="cart-total">Total estimado <strong id="cart-total">$0</strong></p>
             <label class="field">Nombre del cliente
                 <input type="text" id="customer-name" maxlength="60" placeholder="Ej. Ana" autocomplete="off">
             </label>
-            <ul id="cart-items" class="cart-items"></ul>
             <p id="order-error" class="alert error" hidden></p>
-            <button type="button" id="submit-order" class="btn primary">Registrar pedido</button>
-            <p class="hint">El total y las validaciones los hace el servidor al registrar.</p>
+            <button type="button" id="submit-order" class="btn primary big">Registrar pedido</button>
+            <p class="hint">El precio final y las validaciones los hace el servidor al registrar.</p>
         </aside>
     </div>
 
+    <!-- En celular el carrito queda abajo: este botón lleva a él -->
+    <a href="#cart" class="cart-fab" id="cart-fab" hidden>🛒 Ver pedido (<span id="cart-count">0</span>)</a>
 </main>
 
 <script th:src="@{/js/order-form.js}"></script>
